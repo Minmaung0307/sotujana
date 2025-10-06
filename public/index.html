@@ -2,7 +2,7 @@
 <html lang="my" data-theme="light" data-font="base">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ဘုန်းကြီးကျောင်း App • Bhikkhu School</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,10 +10,14 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <!-- ===== Topbar ===== -->
   <header class="topbar">
     <div class="row">
       <button class="icon-btn" id="btnMenu" aria-label="Toggle navigation">☰</button>
-      <h1>ဘုန်းကြီးကျောင်း App</h1>
+      <div class="brand">
+        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9d5.svg" alt="" width="24" height="24">
+        <h1>ဘုန်းကြီးကျောင်း App</h1>
+      </div>
       <div class="space"></div>
       <span id="authState" class="pill">Guest</span>
       <button id="btnAdmin" class="btn sm" onclick="show('admin')">Admin</button>
@@ -21,13 +25,15 @@
     <div id="upcomingWarn" class="warn-banner" role="status" aria-live="polite"></div>
   </header>
 
-  <nav id="mainNav" class="nav">
-    <button class="active" data-tab="home" onclick="tab(this,'home')">🏠 Home</button>
-    <button data-tab="history" onclick="tab(this,'history')">🗂️ History</button>
-    <button data-tab="donate" onclick="tab(this,'donate')">🙏 Donate</button>
-    <button data-tab="events" onclick="tab(this,'events')">📅 Events</button>
-    <button data-tab="records" onclick="tab(this,'records')">📘 Records</button>
-    <div class="divider"></div>
+  <!-- ===== Primary Nav (scrollable on mobile) ===== -->
+  <nav id="mainNav" class="nav" aria-label="Primary">
+    <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
+    <button              data-tab="history" onclick="tab(this,'history')">🗂️ History</button>
+    <button              data-tab="donate"  onclick="tab(this,'donate')">🙏 Donate</button>
+    <button              data-tab="events"  onclick="tab(this,'events')">📅 Events</button>
+    <button              data-tab="records" onclick="tab(this,'records')">📘 Records</button>
+    <button              data-tab="admin"   onclick="tab(this,'admin')">🔐 Admin</button>
+    <div class="space"></div>
     <details class="settings">
       <summary>⚙️ Settings</summary>
       <div class="settings-panel">
@@ -47,14 +53,14 @@
     </details>
   </nav>
 
-  <!-- HOME -->
-  <main id="home" class="section active">
+  <!-- ===== HOME ===== -->
+  <main id="home" class="section active" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
         <div class="pill">နေ့စဥ်လုပ်ငန်း • Daily Activities</div>
         <div class="space"></div>
         <form id="signupForm" class="row" onsubmit="signup(event)">
-          <input id="signupEmail" type="email" inputmode="email" placeholder="Email (အသစ်တင်ရင် အော်တို အကြောင်းကြား)" required>
+          <input id="signupEmail" type="email" inputmode="email" placeholder="Email (အသစ်တင်ရင် အော်တို အသိပေး)" required>
           <button class="btn primary" type="submit">Sign up</button>
         </form>
       </div>
@@ -63,12 +69,12 @@
     </div>
   </main>
 
-  <!-- HISTORY -->
-  <section id="history" class="section">
+  <!-- ===== HISTORY ===== -->
+  <section id="history" class="section" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
         <label class="sr-only" for="histMonth">Month</label>
-        <select id="histMonth">
+        <select id="histMonth" aria-label="Month">
           <option value="">All</option>
           <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
           <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
@@ -76,7 +82,7 @@
           <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
         </select>
         <label class="sr-only" for="histYear">Year</label>
-        <input id="histYear" type="number" placeholder="2025">
+        <input id="histYear" type="number" placeholder="2025" aria-label="Year">
         <button class="btn" onclick="loadHistory()">Search</button>
         <div class="space"></div>
       </div>
@@ -85,8 +91,8 @@
     </div>
   </section>
 
-  <!-- DONATE -->
-  <section id="donate" class="section">
+  <!-- ===== DONATE ===== -->
+  <section id="donate" class="section" tabindex="-1">
     <div class="wrap">
       <div class="card">
         <h2 class="row">🙏 လှူဒါန်းခြင်း • Donations <span class="badge">KBZPay • CBPay</span></h2>
@@ -116,8 +122,8 @@
     </div>
   </section>
 
-  <!-- EVENTS -->
-  <section id="events" class="section">
+  <!-- ===== EVENTS ===== -->
+  <section id="events" class="section" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
         <div class="pill">အခါကြီး/ရက်ကြီးများ</div><div class="space"></div>
@@ -129,8 +135,8 @@
     </div>
   </section>
 
-  <!-- RECORDS -->
-  <section id="records" class="section">
+  <!-- ===== RECORDS (Admin Only) ===== -->
+  <section id="records" class="section" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
         <div class="pill">နှစ်စဥ်မှတ်တမ်း (Admin only)</div>
@@ -143,15 +149,15 @@
     </div>
   </section>
 
-  <!-- ADMIN -->
-  <section id="admin" class="section">
+  <!-- ===== ADMIN ===== -->
+  <section id="admin" class="section" tabindex="-1">
     <div class="wrap">
       <div class="card">
         <div class="row">
           <h2>Admin Panel</h2>
           <div class="space"></div>
-          <input id="admEmail" type="email" placeholder="admin email">
-          <input id="admPass" type="password" placeholder="password">
+          <input id="admEmail" type="email" placeholder="admin email" autocomplete="username">
+          <input id="admPass"  type="password" placeholder="password" autocomplete="current-password">
           <button class="btn primary" onclick="login()">Sign in</button>
           <button class="btn" onclick="logout()">Sign out</button>
         </div>
@@ -195,17 +201,17 @@
       </div>
 
       <div class="card inset">
-        <h3>နှစ်စဥ် မှတ်တမ်းတင်ရန် (Admin)</h3>
+        <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန် (Admin)</h3>
         <form id="recForm" onsubmit="saveRecord(event)">
           <div class="grid two">
-            <input id="rYear" type="number" required placeholder="Year">
-            <input id="rName" required placeholder="အမည်">
-            <input id="rAge" type="number" placeholder="အသက်">
-            <input id="rNRC" placeholder="မှတ်ပုံတင်">
-            <input id="rEdu" placeholder="ပညာအရည်အချင်း">
+            <input id="rYear"   type="number" required placeholder="Year">
+            <input id="rName"   required placeholder="အမည်">
+            <input id="rAge"    type="number" placeholder="အသက်">
+            <input id="rNRC"    placeholder="မှတ်ပုံတင်">
+            <input id="rEdu"    placeholder="ပညာအရည်အချင်း">
             <input id="rMother" placeholder="အမိအမည်">
             <input id="rFather" placeholder="အဖအမည်">
-            <input id="rRole" placeholder="လက်ရှိရာထူး">
+            <input id="rRole"   placeholder="လက်ရှိရာထူး">
             <label class="file"><span>ဓာတ်ပုံ</span><input id="rPhoto" type="file" accept="image/*"></label>
           </div>
           <div class="row gap mt">
@@ -226,7 +232,7 @@
   <script type="module" src="./app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
-    // SW register
+    // SW register (after load)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(()=>{});

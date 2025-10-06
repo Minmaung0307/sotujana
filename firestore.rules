@@ -4,7 +4,7 @@ service cloud.firestore {
     function isAdmin() { return request.auth != null; }
 
     match /posts/{id} {
-      allow read: if true; // public
+      allow read: if true;
       allow write, update, delete: if isAdmin();
     }
     match /events/{id} {
@@ -12,15 +12,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /meta/{doc} {
-      allow read: if true; // donation images & notes are public
+      allow read: if true;
       allow write: if isAdmin();
     }
     match /subscribers/{id} {
       allow read: if false; // protect emails
-      allow write: if true;  // anyone can subscribe
+      allow write: if true; // anyone can subscribe
     }
     match /records/{id} {
-      allow read, write: if isAdmin(); // admin-only (contains personal data)
+      allow read, write: if isAdmin(); // personal data -> admin-only
     }
   }
 }

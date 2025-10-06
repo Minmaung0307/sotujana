@@ -1,16 +1,47 @@
-// app.js — main logic
+// app.js — main logic (mobile-first, fully responsive)
 import { auth, db, st, EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, applyPrefs } from './firebase.js';
 import {
-  collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, query, where, orderBy, limit, serverTimestamp
+  collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc,
+  query, where, orderBy, limit, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
 
-// tiny $ helper
 const $ = sel => document.querySelector(sel);
-
-// UI basics
 $('#year').textContent = new Date().getFullYear();
+
+// ===== Mobile nav toggle =====
+$('#btnMenu').addEventListener('click', ()=>{
+  const nav = $('#mainNav');
+  const cur = getComputedStyle(nav).display;
+  nav.style.display = (cur === 'none') ? 'flex' : 'none';
+});
+
+// ===== Tab switching =====
+window.tab = (el, id) => {
+  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  const sec = document.getElementById(id);
+  sec.classList.add('active');
+  sec.focus({ preventScroll:true });
+
+  if(id==='history') loadHistory();
+  if(id==='events')  loadEvents();
+  if(id==='donate')  loadDonation();
+  if(id==='records') refreshRecordGate();
+};
+window.show = id => document.querySelector(`button[data-tab="${id}"]`)?.click();
+
+// ===== Theme & Font settings =====
+document.querySelectorAll('.seg-btn[data-theme]').forEach(b=>b.addEventListener('click', ()=>{
+  localStorage.setItem('theme', b.getAttribute('data-theme')); applyPrefs();
+}));
+document.querySelectorAll('.seg-btn[data-font]').forEach(b=>b.addEventListener('click', ()=>{
+  localStorage.setItem('font', b.getAttribute('data-font')); applyPrefs();
+}));
+
+// ===== Auth =====
 onAuthStateChanged(auth, u=>{
   const pill = $('#authState');
   if(u){ pill.textContent='Admin'; pill.classList.add('ok'); }
@@ -18,52 +49,21 @@ onAuthStateChanged(auth, u=>{
   refreshRecordGate();
 });
 
-// Mobile nav toggle
-$('#btnMenu').addEventListener('click', ()=>{
-  const nav = $('#mainNav');
-  nav.style.display = nav.style.display === 'flex' ? '' : 'flex';
-});
-
-// Tabs
-window.tab = (el, id) => {
-  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if(id==='history') loadHistory();
-  if(id==='events') loadEvents();
-  if(id==='donate') loadDonation();
-  if(id==='records') refreshRecordGate();
-};
-window.show = id => document.querySelector(`button[data-tab="${id}"]`)?.click();
-
-// Theme & font settings
-document.querySelectorAll('.seg-btn[data-theme]').forEach(b=>b.addEventListener('click', ()=>{
-  const t = b.getAttribute('data-theme');
-  localStorage.setItem('theme', t); applyPrefs();
-}));
-document.querySelectorAll('.seg-btn[data-font]').forEach(b=>b.addEventListener('click', ()=>{
-  const f = b.getAttribute('data-font');
-  localStorage.setItem('font', f); applyPrefs();
-}));
-
-// Auth
 window.login = async ()=>{
   const email = $('#admEmail').value.trim();
-  const pass = $('#admPass').value.trim();
+  const pass  = $('#admPass').value.trim();
   try{ await signInWithEmailAndPassword(auth,email,pass); alert('Signed in'); }
-  catch(e){ alert('Login failed: '+e.message) }
-}
-window.logout = async ()=>{ await signOut(auth); alert('Signed out'); }
+  catch(e){ alert('Login failed: ' + e.message) }
+};
+window.logout = async ()=>{ await signOut(auth); alert('Signed out'); };
 
-// Posts
+// ===== Posts =====
 async function mediaUpload(file){
   if(!file) return '';
   const id = Math.random().toString(36).slice(2);
   const r = sref(st, `posts/${id}-${file.name}`);
   await uploadBytes(r,file); return await getDownloadURL(r);
 }
-
 window.createPost = async(ev)=>{
   ev.preventDefault();
   if(!auth.currentUser) return alert('Admin only');
@@ -83,7 +83,6 @@ window.createPost = async(ev)=>{
     loadLatest();
   }catch(e){ console.error(e); $('#postMsg').textContent=e.message; }
 };
-
 async function loadLatest(){
   const host = $('#postGrid'); host.innerHTML='';
   const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
@@ -113,7 +112,7 @@ window.delPost = async(id)=>{
   loadLatest(); loadHistory();
 };
 
-// History
+// ===== History =====
 window.loadHistory = async()=>{
   const m = $('#histMonth').value; const y = $('#histYear').value.trim();
   const host = $('#histGrid'); host.innerHTML='';
@@ -127,7 +126,7 @@ window.loadHistory = async()=>{
   $('#histEmpty').style.display = n? 'none':'block';
 };
 
-// Donations
+// ===== Donations =====
 async function loadDonation(){
   const cfg = await getDoc(doc(db,'meta','donation'));
   const x = cfg.exists()? cfg.data(): {};
@@ -155,14 +154,14 @@ window.saveDonation = async()=>{
   alert('Donation setup saved'); loadDonation();
 };
 
-// Events
+// ===== Events =====
 window.addEvent = async()=>{
   if(!auth.currentUser) return alert('Admin only');
   const t = $('#evTitle').value.trim(); const d = $('#evDate').value;
   if(!t||!d) return alert('Enter title & date');
   await addDoc(collection(db,'events'), { title:t, date:d });
   $('#evTitle').value=''; $('#evDate').value=''; loadEvents();
-}
+};
 async function loadEvents(){
   const snap = await getDocs(collection(db,'events'));
   const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
@@ -198,7 +197,7 @@ function renderCalendar(all){
   }
 }
 
-// Subscribers & EmailJS
+// ===== Subscribers & EmailJS =====
 window.signup = async(ev)=>{
   ev.preventDefault();
   const e1 = $('#signupEmail'); const e2 = $('#signupEmail2');
@@ -222,7 +221,7 @@ async function notifySubscribers(post){
   }catch(e){ console.warn('Email notify failed', e) }
 }
 
-// Records (admin only)
+// ===== Records (admin only) =====
 function refreshRecordGate(){
   const isAdm = !!auth.currentUser;
   document.querySelector('#records .wrap').style.opacity = isAdm? '1':'0.6';
@@ -259,9 +258,9 @@ window.searchRecords = async()=>{
   $('#recEmpty').style.display = n? 'none':'block';
 };
 
-// Helpers
-function escapeHTML(s){ return (s||'').replace(/[&<>"]+/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;"}[m])) }
+// ===== Helpers =====
+function escapeHTML(s){ return (s||'').replace(/[&<>"]+/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m])) }
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
 
-// Bootstrap
+// ===== Bootstrap =====
 loadLatest(); loadDonation(); loadEvents();
