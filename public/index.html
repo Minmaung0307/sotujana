@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ဘုန်းကြီးကျောင်း App • Bhikkhu School</title>
+  <title>BuddhaCollege</title>
+
+  <!-- stop favicon 404 -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%A4%95%3C/text%3E%3C/svg%3E">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,54 +14,49 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <noscript style="display:block;padding:12px;background:#fee2e2;color:#991b1b;text-align:center">
-    JavaScript လိုအပ်ပါတယ်
-  </noscript>
-  <!-- ===== Topbar ===== -->
   <header class="topbar">
     <div class="row">
       <button class="icon-btn" id="btnMenu" aria-label="Toggle navigation">☰</button>
       <div class="brand">
         <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9d5.svg" alt="" width="24" height="24">
-        <h1>ဘုန်းကြီးကျောင်း App</h1>
+        <h1>BuddhaCollege</h1>
       </div>
       <div class="space"></div>
       <span id="authState" class="pill">Guest</span>
-      <!-- ဒီခလုပ်က Admin tab ကို ဖွင့်ပေးမယ် -->
       <button id="btnAdmin" class="btn sm" onclick="show('admin')">Admin</button>
     </div>
     <div id="upcomingWarn" class="warn-banner" role="status" aria-live="polite"></div>
   </header>
 
-  <!-- ===== Primary Nav (scrollable on mobile) ===== -->
+  <!-- Primary Nav + Settings as options -->
   <nav id="mainNav" class="nav" aria-label="Primary">
     <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
     <button              data-tab="history" onclick="tab(this,'history')">🗂️ History</button>
     <button              data-tab="donate"  onclick="tab(this,'donate')">🙏 Donate</button>
     <button              data-tab="events"  onclick="tab(this,'events')">📅 Events</button>
     <button              data-tab="records" onclick="tab(this,'records')">📘 Records</button>
+    <button              data-tab="map"     onclick="tab(this,'map')">🗺️ Map</button>
     <button              data-tab="admin"   onclick="tab(this,'admin')">🔐 Admin</button>
     <div class="space"></div>
-    <details class="settings">
-      <summary>⚙️ Settings</summary>
-      <div class="settings-panel">
-        <label>Theme</label>
-        <div class="seg">
-          <button class="seg-btn" data-theme="light">Light</button>
-          <button class="seg-btn" data-theme="dark">Dark</button>
-          <button class="seg-btn" data-theme="warm">Warm</button>
-        </div>
-        <label>Font size</label>
-        <div class="seg">
-          <button class="seg-btn" data-font="small">A-</button>
-          <button class="seg-btn" data-font="base">A</button>
-          <button class="seg-btn" data-font="large">A+</button>
-        </div>
-      </div>
-    </details>
+
+    <!-- Settings as selects (option) -->
+    <div class="row wrap" style="gap:6px">
+      <label class="sr-only" for="selTheme">Theme</label>
+      <select id="selTheme" class="opt">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="warm">Warm</option>
+      </select>
+      <label class="sr-only" for="selFont">Font size</label>
+      <select id="selFont" class="opt">
+        <option value="small">A-</option>
+        <option value="base" selected>A</option>
+        <option value="large">A+</option>
+      </select>
+    </div>
   </nav>
 
-  <!-- ===== HOME ===== -->
+  <!-- HOME -->
   <main id="home" class="section active" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
@@ -75,11 +72,10 @@
     </div>
   </main>
 
-  <!-- ===== HISTORY ===== -->
+  <!-- HISTORY -->
   <section id="history" class="section" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
-        <label class="sr-only" for="histMonth">Month</label>
         <select id="histMonth" aria-label="Month">
           <option value="">All</option>
           <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
@@ -87,7 +83,6 @@
           <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
           <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
         </select>
-        <label class="sr-only" for="histYear">Year</label>
         <input id="histYear" type="number" placeholder="2025" aria-label="Year">
         <button class="btn" onclick="loadHistory()">Search</button>
         <div class="space"></div>
@@ -97,7 +92,7 @@
     </div>
   </section>
 
-  <!-- ===== DONATE ===== -->
+  <!-- DONATE -->
   <section id="donate" class="section" tabindex="-1">
     <div class="wrap">
       <div class="card">
@@ -128,7 +123,7 @@
     </div>
   </section>
 
-  <!-- ===== EVENTS ===== -->
+  <!-- EVENTS -->
   <section id="events" class="section" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
@@ -141,13 +136,14 @@
     </div>
   </section>
 
-  <!-- ===== RECORDS (Admin Only) ===== -->
+  <!-- RECORDS (Admin Only) -->
   <section id="records" class="section" tabindex="-1">
     <div class="wrap">
       <div class="row toolbar">
-        <div class="pill">နှစ်စဥ်မှတ်တမ်း (Admin only)</div>
+        <div class="pill">နှစ်စဉ်မှတ်တမ်း (Admin only)</div>
         <div class="space"></div>
         <input id="recYear" type="number" placeholder="Year e.g. 2025">
+        <input id="recQuery" type="search" placeholder="အမည် / ဖုန်း / Email ရိုက်ရှာ" aria-label="Search records">
         <button class="btn" onclick="searchRecords()">Search</button>
       </div>
       <div id="recGrid" class="grid"></div>
@@ -155,7 +151,23 @@
     </div>
   </section>
 
-  <!-- ===== ADMIN ===== -->
+  <!-- MAP -->
+  <section id="map" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="card">
+        <h2>🗺️ Map & Directions</h2>
+        <p class="muted">ကျောင်းလိပ်စာ — ၃၄၀၇, ဗုဒ္ဓကောလိပ်, ဒဂုံမြို့သစ်တောင်ပိုင်း, ရန်ကုန်မြို့</p>
+        <div class="row wrap gap">
+          <a class="btn" id="btnDrive"   target="_blank" rel="noopener">🚗 Drive</a>
+          <a class="btn" id="btnMoto"    target="_blank" rel="noopener">🛵 Motorcycle</a>
+          <a class="btn" id="btnOpenMap" target="_blank" rel="noopener">📍 Open in Google Maps</a>
+        </div>
+        <p class="note mt">အကြောင်းပြချက်အချို့တွင် Motorcycle မပံ့ပိုးလျှင် Driving သို့ fallback ဖြစ်နိုင်ပါသည်။</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
   <section id="admin" class="section" tabindex="-1">
     <div class="wrap">
       <div class="card">
@@ -170,23 +182,31 @@
       </div>
 
       <div class="grid two">
+        <!-- Multi-block Post Composer -->
         <div class="card inset">
-          <h3>ပို့စ်အသစ်တင်ရန်</h3>
+          <h3>ပို့စ်အသစ်တင်ရန် (Multi-block)</h3>
           <form id="postForm" onsubmit="createPost(event)">
             <input id="pTitle" required placeholder="ခေါင်းစဉ်">
-            <textarea id="pBody" placeholder="အကြောင်းအရာ"></textarea>
-            <div class="seg">
-              <label class="seg-btn"><input type="radio" name="mtype" value="image" checked> Image</label>
-              <label class="seg-btn"><input type="radio" name="mtype" value="video"> Video</label>
+            <label class="row" style="gap:8px">
+              <input id="pAllowHTML" type="checkbox"> <span class="note">Allow simple HTML (Admin only)</span>
+            </label>
+
+            <div id="blocks" class="blocks"></div>
+            <div class="row wrap gap">
+              <button class="btn" type="button" onclick="addBlock('text')">＋ စာသား</button>
+              <button class="btn" type="button" onclick="addBlock('image')">＋ ဓာတ်ပုံ</button>
+              <button class="btn" type="button" onclick="addBlock('video')">＋ ဗွီဒီယို</button>
+              <button class="btn" type="button" onclick="addBlock('audio')">＋ အသံ</button>
             </div>
-            <input id="pFile" type="file" accept="image/*,video/*">
-            <div class="row gap">
+
+            <div class="row gap mt">
               <button class="btn primary" type="submit">Publish</button>
               <span id="postMsg" class="muted"></span>
             </div>
           </form>
         </div>
 
+        <!-- Donations & Events -->
         <div class="card inset">
           <h3>Donations & Events</h3>
           <input id="kbzNoteIn" placeholder="KBZPay note e.g. Account Name">
@@ -201,11 +221,13 @@
           <div class="row gap wrap">
             <input id="evTitle" placeholder="Event title">
             <input id="evDate" type="date">
+            <textarea id="evDesc" placeholder="Event description (optional)"></textarea>
             <button class="btn" onclick="addEvent()">Add</button>
           </div>
         </div>
       </div>
 
+      <!-- Yearly Records -->
       <div class="card inset">
         <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန် (Admin)</h3>
         <form id="recForm" onsubmit="saveRecord(event)">
@@ -218,6 +240,8 @@
             <input id="rMother" placeholder="အမိအမည်">
             <input id="rFather" placeholder="အဖအမည်">
             <input id="rRole"   placeholder="လက်ရှိရာထူး">
+            <input id="rPhone"  placeholder="ဖုန်း">
+            <input id="rEmail"  type="email" placeholder="Email">
             <label class="file"><span>ဓာတ်ပုံ</span><input id="rPhoto" type="file" accept="image/*"></label>
           </div>
           <div class="row gap mt">
@@ -233,7 +257,6 @@
     © <span id="year"></span> Bhikkhu School • Firebase + EmailJS
   </footer>
 
-  <!-- App scripts -->
   <script type="module" src="./firebase.js"></script>
   <script type="module" src="./app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>

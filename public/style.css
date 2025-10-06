@@ -118,3 +118,15 @@ html[data-theme="warm"]{
 @media (prefers-reduced-motion: reduce){
   *{ animation: none !important; transition: none !important; scroll-behavior: auto !important }
 }
+
+.opt{ padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; font:inherit }
+
+.blocks{ display:flex; flex-direction:column; gap:10px; margin:10px 0 }
+.block{ border:1px dashed var(--line); border-radius:12px; padding:10px; background:#fff }
+.block .row{ align-items:flex-start }
+.block .type{ min-width:120px }
+.block textarea{ min-height:90px }
+.block .preview{ margin-top:6px; font-size:.9rem; color:var(--muted) }
+
+/* Map buttons wrap nicely */
+#map .row.gap a.btn{ text-decoration:none }
