@@ -3,18 +3,18 @@ import {
   collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc,
   query, where, orderBy, limit, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
 
 const $ = s => document.querySelector(s);
 
 // footer year
-$('#year').textContent = new Date().getFullYear();
+$('#year') && ($('#year').textContent = new Date().getFullYear());
+loadMapLinks();
 
 // ===== Settings as selects =====
 const selTheme = $('#selTheme'), selFont = $('#selFont');
 if (selTheme && selFont) {
-  // init from localStorage
   selTheme.value = localStorage.getItem('theme') || 'light';
   selFont.value  = localStorage.getItem('font')  || 'base';
   selTheme.addEventListener('change', e=>{ localStorage.setItem('theme', e.target.value); applyPrefs(); });
@@ -22,7 +22,7 @@ if (selTheme && selFont) {
 }
 
 // ===== Mobile nav toggle =====
-$('#btnMenu').addEventListener('click', ()=>{
+$('#btnMenu')?.addEventListener('click', ()=>{
   const nav = $('#mainNav');
   const cur = getComputedStyle(nav).display;
   nav.style.display = (cur === 'none') ? 'flex' : 'none';
@@ -36,14 +36,41 @@ window.tab = (el, id) => {
   const sec = document.getElementById(id);
   sec.classList.add('active');
   sec.focus?.({ preventScroll:true });
-
   if(id==='history') loadHistory();
   if(id==='events')  loadEvents();
   if(id==='donate')  loadDonation();
   if(id==='records') refreshRecordGate();
   if(id==='map')     loadMapLinks();
+  if(id==='account') updateAccountStatus();
 };
 window.show = id => document.querySelector(`button[data-tab="${id}"]`)?.click();
+
+// ============ Auth & Role ============
+let isAdmin = false;
+
+async function checkAdmin(u){
+  if(!u) return false;
+  const ref = doc(db, 'admins', u.uid);
+  const snap = await getDoc(ref);
+  return snap.exists();
+}
+
+async function refreshAuthUI(u){
+  isAdmin = await checkAdmin(u);
+  const pill = $('#authState');
+  if(u){
+    pill.textContent = isAdmin ? 'Admin' : 'User';
+    pill.classList.add('ok');
+  }else{
+    pill.textContent = 'Guest';
+    pill.classList.remove('ok');
+  }
+  updateAccountStatus();
+  refreshRecordGate();
+}
+
+// persist login across reloads
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
 
 // ===== Auth =====
 onAuthStateChanged(auth, u=>{
@@ -51,21 +78,63 @@ onAuthStateChanged(auth, u=>{
   if(u){ pill.textContent='Admin'; pill.classList.add('ok'); }
   else { pill.textContent='Guest'; pill.classList.remove('ok'); }
   refreshRecordGate();
+  refreshAuthUI(u);
 });
+
 window.login = async ()=>{
-  const email = $('#admEmail').value.trim();
-  const pass  = $('#admPass').value.trim();
-  try{ await signInWithEmailAndPassword(auth,email,pass); alert('Signed in'); }
-  catch(e){ alert('Login failed: ' + e.message) }
+  try {
+    const email = $('#admEmail').value.trim();
+    const pass  = $('#admPass').value.trim();
+    await signInWithEmailAndPassword(auth,email,pass);
+    alert('Signed in');
+  } catch(e){ alert('Login failed: ' + e.message) }
 };
-window.logout = async ()=>{ await signOut(auth); alert('Signed out'); };
+
+window.logout = async ()=>{
+  try{
+    await signOut(auth);
+    // Force UI to guest immediately; avoid SW/SPA cache illusions
+    await refreshAuthUI(null);
+    // Optional hard reload to fully reset state:
+    location.reload();
+  }catch(e){ alert('Sign out failed: ' + e.message); }
+};
+
+// ---- Account tab handlers (for other users)
+window.accountLogin = async ()=>{
+  try{
+    const email = $('#acEmail').value.trim();
+    const pass  = $('#acPass').value.trim();
+    await signInWithEmailAndPassword(auth,email,pass);
+    alert('Signed in');
+    show('home');
+  }catch(e){ alert('Login failed: ' + e.message) }
+};
+window.accountSignup = async ()=>{
+  try{
+    const email = $('#acNewEmail').value.trim();
+    const pass  = $('#acNewPass').value.trim();
+    await createUserWithEmailAndPassword(auth,email,pass);
+    alert('Account created. You are signed in.');
+    show('home');
+  }catch(e){ alert('Signup failed: ' + e.message) }
+};
+window.accountLogout = async ()=>{ return window.logout(); };
+
+function updateAccountStatus(){
+  const el = $('#accountStatus');
+  if(!el) return;
+  const u = auth.currentUser;
+  if(!u){ el.textContent = 'Signed out (Guest)'; return; }
+  el.textContent = `${isAdmin ? 'Admin' : 'User'} • ${u.email||u.uid}`;
+}
 
 // ===== Map & Directions =====
 function loadMapLinks(){
   const addr = encodeURIComponent('3407, Buddhist College, Dagon Myothit (South), Yangon, Myanmar');
-  $('#btnDrive').href   = `https://www.google.com/maps/dir/?api=1&destination=${addr}&travelmode=driving`;
-  $('#btnMoto').href    = `https://www.google.com/maps/dir/?api=1&destination=${addr}&travelmode=two_wheeler`;
-  $('#btnOpenMap').href = `https://www.google.com/maps/search/?api=1&query=${addr}`;
+  $('#btnDrive')?.setAttribute('href', `https://www.google.com/maps/dir/?api=1&destination=${addr}&travelmode=driving`);
+  $('#btnMoto')?.setAttribute('href',  `https://www.google.com/maps/dir/?api=1&destination=${addr}&travelmode=two_wheeler`);
+  $('#btnOpenMap')?.setAttribute('href',`https://www.google.com/maps/search/?api=1&query=${addr}`);
 }
 
 // ===== Posts (Multi-block) =====

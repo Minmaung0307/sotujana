@@ -24,37 +24,37 @@
       <div class="space"></div>
       <span id="authState" class="pill">Guest</span>
       <button id="btnAdmin" class="btn sm" onclick="show('admin')">Admin</button>
+      <button class="btn sm" onclick="show('account')">Account</button>
     </div>
     <div id="upcomingWarn" class="warn-banner" role="status" aria-live="polite"></div>
   </header>
 
   <!-- Primary Nav + Settings as options -->
   <nav id="mainNav" class="nav" aria-label="Primary">
-    <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
-    <button              data-tab="history" onclick="tab(this,'history')">🗂️ History</button>
-    <button              data-tab="donate"  onclick="tab(this,'donate')">🙏 Donate</button>
-    <button              data-tab="events"  onclick="tab(this,'events')">📅 Events</button>
-    <button              data-tab="records" onclick="tab(this,'records')">📘 Records</button>
-    <button              data-tab="map"     onclick="tab(this,'map')">🗺️ Map</button>
-    <button              data-tab="admin"   onclick="tab(this,'admin')">🔐 Admin</button>
-    <div class="space"></div>
+  <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
+  <button              data-tab="history" onclick="tab(this,'history')">🗂️ History</button>
+  <button              data-tab="donate"  onclick="tab(this,'donate')">🙏 Donate</button>
+  <button              data-tab="events"  onclick="tab(this,'events')">📅 Events</button>
+  <button              data-tab="records" onclick="tab(this,'records')">📘 Records</button>
+  <button              data-tab="map"     onclick="tab(this,'map')">🗺️ Map</button>
+  <button              data-tab="admin"   onclick="tab(this,'admin')">🔐 Admin</button>
+  <button              data-tab="account" onclick="tab(this,'account')">👤 Account</button>
+  <div class="space"></div>
 
-    <!-- Settings as selects (option) -->
-    <div class="row wrap" style="gap:6px">
-      <label class="sr-only" for="selTheme">Theme</label>
-      <select id="selTheme" class="opt">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="warm">Warm</option>
-      </select>
-      <label class="sr-only" for="selFont">Font size</label>
-      <select id="selFont" class="opt">
-        <option value="small">A-</option>
-        <option value="base" selected>A</option>
-        <option value="large">A+</option>
-      </select>
-    </div>
-  </nav>
+  <!-- (settings selects မပြောင်းရ) -->
+  <div class="row wrap" style="gap:6px">
+    <select id="selTheme" class="opt">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="warm">Warm</option>
+    </select>
+    <select id="selFont" class="opt">
+      <option value="small">A-</option>
+      <option value="base" selected>A</option>
+      <option value="large">A+</option>
+    </select>
+  </div>
+</nav>
 
   <!-- HOME -->
   <main id="home" class="section active" tabindex="-1">
@@ -252,6 +252,40 @@
       </div>
     </div>
   </section>
+
+  <section id="account" class="section" tabindex="-1">
+  <div class="wrap">
+    <div class="card">
+      <h2>👤 Account</h2>
+      <p class="note">User/Staff များအတွက် Sign in / Sign up နေရာ — Admin မဟုတ်ပါက view only ဖြစ်နေမည်။</p>
+      <div class="grid two">
+        <div class="card inset">
+          <h3>Sign in</h3>
+          <input id="acEmail" type="email" placeholder="email@example.com" autocomplete="username">
+          <input id="acPass"  type="password" placeholder="password" autocomplete="current-password">
+          <div class="row gap mt">
+            <button class="btn primary" onclick="accountLogin()">Sign in</button>
+            <button class="btn" onclick="accountLogout()">Sign out</button>
+          </div>
+        </div>
+        <div class="card inset">
+          <h3>Sign up (optional)</h3>
+          <p class="note">Admin မဟုတ်ပါက post/edit/records မလုပ်နိုင်ပါ—view only</p>
+          <input id="acNewEmail" type="email" placeholder="email@example.com" autocomplete="username">
+          <input id="acNewPass"  type="password" placeholder="password (min 6 chars)" autocomplete="new-password">
+          <div class="row gap mt">
+            <button class="btn" onclick="accountSignup()">Create account</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt">
+        <h3>Current status</h3>
+        <div id="accountStatus" class="muted">Checking…</div>
+      </div>
+    </div>
+  </div>
+</section>
 
   <footer class="footer">
     © <span id="year"></span> Bhikkhu School • Firebase + EmailJS
