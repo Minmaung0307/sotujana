@@ -8,7 +8,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https:/
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
 
 const $ = sel => document.querySelector(sel);
-$('#year').textContent = new Date().getFullYear();
+$('#year') && ($('#year').textContent = new Date().getFullYear());
 
 // ===== Mobile nav toggle =====
 $('#btnMenu').addEventListener('click', ()=>{
@@ -23,9 +23,7 @@ window.tab = (el, id) => {
   el.classList.add('active');
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   const sec = document.getElementById(id);
-  sec.classList.add('active');
-  sec.focus({ preventScroll:true });
-
+  if (sec) { sec.classList.add('active'); sec.focus?.({ preventScroll:true }); }
   if(id==='history') loadHistory();
   if(id==='events')  loadEvents();
   if(id==='donate')  loadDonation();
@@ -41,17 +39,29 @@ document.querySelectorAll('.seg-btn[data-font]').forEach(b=>b.addEventListener('
   localStorage.setItem('font', b.getAttribute('data-font')); applyPrefs();
 }));
 
-// ===== Auth =====
+// Mobile nav
+const menuBtn = $('#btnMenu');
+if(menuBtn){
+  menuBtn.addEventListener('click', ()=>{
+    const nav = $('#mainNav');
+    const cur = getComputedStyle(nav).display;
+    nav.style.display = (cur === 'none') ? 'flex' : 'none';
+  });
+}
+
+// Auth state
 onAuthStateChanged(auth, u=>{
   const pill = $('#authState');
-  if(u){ pill.textContent='Admin'; pill.classList.add('ok'); }
-  else { pill.textContent='Guest'; pill.classList.remove('ok'); }
+  if(pill){
+    if(u){ pill.textContent='Admin'; pill.classList.add('ok'); }
+    else { pill.textContent='Guest'; pill.classList.remove('ok'); }
+  }
   refreshRecordGate();
 });
 
 window.login = async ()=>{
-  const email = $('#admEmail').value.trim();
-  const pass  = $('#admPass').value.trim();
+  const email = $('#admEmail')?.value.trim();
+  const pass  = $('#admPass')?.value.trim();
   try{ await signInWithEmailAndPassword(auth,email,pass); alert('Signed in'); }
   catch(e){ alert('Login failed: ' + e.message) }
 };

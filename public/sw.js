@@ -1,4 +1,3 @@
-// sw.js — offline first for static assets
 const CACHE = 'bhikkhu-cache-v2';
 const ASSETS = ['.', './index.html', './style.css', './app.js', './firebase.js'];
 
@@ -7,8 +6,7 @@ self.addEventListener('install', e=>{
   self.skipWaiting();
 });
 self.addEventListener('activate', e=>{
-  e.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))))
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
 self.addEventListener('fetch', e=>{

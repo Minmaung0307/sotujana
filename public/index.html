@@ -4,12 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ဘုန်းကြီးကျောင်း App • Bhikkhu School</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%A4%95%3C/text%3E%3C/svg%3E">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;500;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <noscript style="display:block;padding:12px;background:#fee2e2;color:#991b1b;text-align:center">
+    JavaScript လိုအပ်ပါတယ်
+  </noscript>
   <!-- ===== Topbar ===== -->
   <header class="topbar">
     <div class="row">
@@ -20,6 +25,7 @@
       </div>
       <div class="space"></div>
       <span id="authState" class="pill">Guest</span>
+      <!-- ဒီခလုပ်က Admin tab ကို ဖွင့်ပေးမယ် -->
       <button id="btnAdmin" class="btn sm" onclick="show('admin')">Admin</button>
     </div>
     <div id="upcomingWarn" class="warn-banner" role="status" aria-live="polite"></div>
@@ -232,7 +238,6 @@
   <script type="module" src="./app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
-    // SW register (after load)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(()=>{});
