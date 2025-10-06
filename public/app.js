@@ -12,6 +12,58 @@ const $ = s => document.querySelector(s);
 $('#year') && ($('#year').textContent = new Date().getFullYear());
 loadMapLinks();
 
+// ===== Seed demo data (Admin only) =====
+window.seedDemo = async()=>{
+  // Admin gating
+  if (!(auth.currentUser)) return alert('Admin only');
+
+  // ✅ နမူနာ Posts 2 ခု
+  const d = new Date();
+  await addDoc(collection(db,'posts'), {
+    title: 'နမူနာ ပို့စ် — HTML + ဓာတ်ပုံ',
+    blocks: [
+      { type:'text', allowHTML:true, text:'<h3>သင်တန်းစီစဉ်</h3><p><b>မနက်</b> ၅:၀၀ စတင်…</p>' },
+      { type:'image', url:'https://picsum.photos/seed/monk1/800/450' },
+      { type:'text', allowHTML:false, text:'ဤပိုဒ်သည် plain text ပါ' }
+    ],
+    createdAt: serverTimestamp(), month:d.getMonth()+1, year:d.getFullYear()
+  });
+
+  await addDoc(collection(db,'posts'), {
+    title: 'နမူနာ — ဗွီဒီယို + အသံ',
+    blocks: [
+      { type:'text', allowHTML:true, text:'<p>ဓမ္မသင်ခန်းစာ ဗွီဒီယို</p>' },
+      { type:'video', url:'https://www.w3schools.com/html/mov_bbb.mp4' },
+      { type:'audio', url:'https://www.w3schools.com/html/horse.mp3' }
+    ],
+    createdAt: serverTimestamp(), month:d.getMonth()+1, year:d.getFullYear()
+  });
+
+  // ✅ နမူနာ နှစ်စဉ်မှတ်တမ်း 2 ခု
+  await addDoc(collection(db,'records'), {
+    y: 2024, name:'U Dhamma', age:28, nrc:'12/PaKaNa(N)123456',
+    edu:'BA (Buddhist Studies)', mother:'Daw Hnin', father:'U Aung',
+    role:'Assistant Teacher', phone:'09-123456789', email:'udhamma@example.com',
+    photo:'https://picsum.photos/seed/rec1/200/150', ts:Date.now()
+  });
+
+  await addDoc(collection(db,'records'), {
+    y: 2025, name:'U Sīla', age:32, nrc:'9/LaMaNa(N)654321',
+    edu:'MA (Pāli)', mother:'Daw Nwe', father:'U Tun',
+    role:'Discipline Master', phone:'09-987654321', email:'usila@example.com',
+    photo:'https://picsum.photos/seed/rec2/200/150', ts:Date.now()
+  });
+
+  // ✅ နမူနာ Event (ယနေ့)
+  const todayIso = new Date().toISOString().slice(0,10);
+  await addDoc(collection(db,'events'), { title:'Sabbath Day', date: todayIso, desc:'မနက် ဓမ္မစာမေးပွဲ' });
+
+  alert('နမူနာဒေတာ ထည့်ပြီးပါပြီ ✔');
+  // ရလာဒ် ပြန်လည်ပြ
+  if (typeof loadLatest === 'function') loadLatest();
+  if (typeof loadEvents === 'function') loadEvents();
+};
+
 // ===== Settings as selects =====
 const selTheme = $('#selTheme'), selFont = $('#selFont');
 if (selTheme && selFont) {
@@ -336,18 +388,60 @@ async function loadEvents(){
   else { wb.classList.remove('show'); wb.textContent=''; }
   renderCalendar(arr);
 }
-function renderCalendar(all){
-  const c = $('#cal'); c.innerHTML='';
+// ===== Calendar day notes (admin editable for every cell) =====
+async function getDayNote(iso){
+  const snap = await getDoc(doc(db,'eventNotes', iso));
+  return snap.exists()? (snap.data().note||'') : '';
+}
+async function saveDayNote(iso, text){
+  // Firestore rules က admin only ဖြစ်နေမှာ — UI ကတော့ admin မဟုတ်ရင် textarea မပြ
+  await setDoc(doc(db,'eventNotes', iso), { note: text, ts: Date.now() });
+}
+function dayISO(y,m,d){
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+async function renderCalendar(allEvents){
+  const c = document.getElementById('cal'); if(!c) return;
+  c.innerHTML='';
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
   const first = new Date(y,m,1); const start = first.getDay();
   const days = new Date(y,m+1,0).getDate();
+
+  // leading blanks
   for(let i=0;i<start;i++){ c.appendChild(document.createElement('div')); }
+
+  const u = auth.currentUser;
+  // (optional) admin check အမြန် — admin gate UI
+  let admin = false;
+  if (u) {
+    const s = await getDoc(doc(db,'admins', u.uid));
+    admin = s.exists();
+  }
+
   for(let d=1; d<=days; d++){
     const cell = document.createElement('div'); cell.className='day';
-    const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const iso = dayISO(y,m,d);
     cell.innerHTML = `<div class="d">${d}</div>`;
-    const todays = all.filter(x=>x.date===iso);
-    todays.forEach(x=>{ const t = document.createElement('div'); t.className='tag'; t.textContent=x.title; cell.appendChild(t); });
+
+    const todays = allEvents.filter(x=>x.date===iso);
+    todays.forEach(x=>{
+      const t = document.createElement('div'); t.className='tag'; t.textContent=x.title;
+      cell.appendChild(t);
+    });
+
+    if(admin){
+      const ta = document.createElement('textarea');
+      ta.placeholder = 'ယနေ့မှတ်ချက်…';
+      ta.value = await getDayNote(iso);
+      ta.addEventListener('change', ()=> saveDayNote(iso, ta.value));
+      cell.appendChild(ta);
+    }else{
+      const p = document.createElement('div'); p.className='note-view';
+      p.textContent = await getDayNote(iso);
+      cell.appendChild(p);
+    }
+
     c.appendChild(cell);
   }
 }
