@@ -7,13 +7,12 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    match /posts/{id}   { allow read: if true;  allow write, update, delete: if isAdmin(); }
-    match /events/{id}  { allow read: if true;  allow write, update, delete: if isAdmin(); }
-    match /eventNotes/{day} { allow read: if true; allow write, update, delete: if isAdmin(); }
-    match /records/{id} { allow read, write, update, delete: if isAdmin(); }
-    match /meta/{doc}   { allow read: if true;  allow write, update: if isAdmin(); }
-    match /subscribers/{id} { allow read: if false; allow write: if true; }
-
+    match /posts/{id}         { allow read: if true;  allow write, update, delete: if isAdmin(); }
+    match /events/{id}        { allow read: if true;  allow write, update, delete: if isAdmin(); }
+    match /eventNotes/{day}   { allow read: if true;  allow write, update, delete: if isAdmin(); }
+    match /records/{id}       { allow read, write, update, delete: if isAdmin(); }
+    match /meta/{doc}         { allow read: if true;  allow write, update: if isAdmin(); }
+    match /subscribers/{id}   { allow read: if false; allow write: if true; }
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write, update, delete: if isAdmin();

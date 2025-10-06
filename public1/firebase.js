@@ -14,6 +14,10 @@ export const FIREBASE_CONFIG = {
   measurementId: "G-6T0MDFL7PD"
 };
 
+export const EMAILJS_PUBLIC_KEY = "WT0GOYrL9HnDKvLUf";
+export const EMAILJS_SERVICE_ID  = "service_z9tkmvr";
+export const EMAILJS_TEMPLATE_ID = "template_q5q471f";
+
 export const app = initializeApp(FIREBASE_CONFIG);
 export const auth = getAuth(app);
 export const db   = getFirestore(app);

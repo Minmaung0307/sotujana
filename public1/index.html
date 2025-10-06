@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ဘုန်းကြီးကျောင်း • Simple App v2</title>
+  <title>ဘုန်းကြီးကျောင်း • Simple App</title>
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header class="topbar shadow">
+  <header class="topbar">
     <div class="row">
       <div class="brand">ဘုန်းကြီးကျောင်း</div>
       <div class="space"></div>
@@ -22,7 +22,7 @@
     </div>
   </header>
 
-  <nav id="mainNav" class="nav shadow">
+  <nav id="mainNav" class="nav">
     <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
     <button              data-tab="events" onclick="tab(this,'events')">📅 Events</button>
     <button              data-tab="donate" onclick="tab(this,'donate')">🙏 Donate</button>
@@ -33,10 +33,6 @@
       <select id="selTheme" class="opt">
         <option value="light">Light</option>
         <option value="dark">Dark</option>
-        <option value="warm">Warm</option>
-        <option value="emerald">Emerald</option>
-        <option value="ocean">Ocean</option>
-        <option value="rose">Rose</option>
       </select>
       <select id="selFont" class="opt">
         <option value="small">A-</option>
@@ -48,30 +44,22 @@
 
   <main id="home" class="section active">
     <div class="wrap">
-      <div class="hero card gradient">
-        <h1>နေ့စဉ်လုပ်ငန်း</h1>
-        <p class="muted">ပုံ/စာ/ဗီဒီယို/အသံ ဖြင့် လှလှပပ ပြသထားပါသည်။</p>
+      <div class="row toolbar">
+        <strong>နေ့စဥ်လုပ်ငန်း</strong>
+        <div class="space"></div>
         <form id="signupForm" class="row" onsubmit="signup(event)">
-          <input id="signupEmail" type="email" inputmode="email" placeholder="Email (အသစ်တင်ရင် အော်တို အသိပေး)" required>
+          <input id="signupEmail" type="email" inputmode="email" placeholder="Email (အသစ်တင်ရင် အော်တိုအသိပေး)" required>
           <button class="btn primary" type="submit">Sign up</button>
         </form>
       </div>
-      <div id="postGrid" class="grid cards"></div>
+      <div id="postGrid" class="grid"></div>
       <div id="homeEmpty" class="empty">တင်ထားသော ပို့စ်မရှိသေးပါ…</div>
     </div>
   </main>
 
   <section id="events" class="section">
     <div class="wrap">
-      <div class="row toolbar">
-        <h2 class="title">အခါကြီး/ရက်ကြီးများ</h2>
-        <div class="space"></div>
-        <div class="row month-nav">
-          <button class="btn" onclick="prevMonth()">←</button>
-          <div id="monthLabel" class="pill"></div>
-          <button class="btn" onclick="nextMonth()">→</button>
-        </div>
-      </div>
+      <div class="row toolbar"><strong>အခါကြီး/ရက်ကြီးများ</strong></div>
       <div id="eventUpcoming" class="list"></div>
       <h3 class="mt">ဤလ (Admin များအတွက် အကွက်တိုင်း စာရေးနိုင်)</h3>
       <div id="cal" class="calendar"></div>
@@ -81,8 +69,8 @@
   <section id="donate" class="section">
     <div class="wrap">
       <div class="card">
-        <h2 class="row">Donations <span class="badge">KBZPay • CBPay • AYAPay</span></h2>
-        <div class="grid three">
+        <h2 class="row">Donations <span class="badge">KBZPay • CBPay</span></h2>
+        <div class="grid two">
           <div class="card inset">
             <h3>KBZPay</h3>
             <img id="qrKBZ" class="qr" alt="KBZPay QR">
@@ -93,11 +81,6 @@
             <img id="qrCB" class="qr" alt="CBPay QR">
             <p class="note" id="cbNote"></p>
           </div>
-          <div class="card inset">
-            <h3>AYAPay</h3>
-            <img id="qrAYA" class="qr" alt="AYAPay QR">
-            <p class="note" id="ayaNote"></p>
-          </div>
         </div>
       </div>
     </div>
@@ -105,16 +88,14 @@
 
   <section id="records" class="section">
     <div class="wrap">
-      <div class="card gradient">
-        <h2>နှစ်စဉ်မှတ်တမ်း</h2>
-        <p class="muted nonadmin-note">Admin မပါလျှင် ဖတ်ရုံသာ — data အားလုံးကို cloud များတွင် သိမ်းထားပြီး device မတူလည်း အလွယ်တကူ ပြန်မြင်နိုင်ပါသည်။</p>
-      </div>
       <div class="row toolbar">
+        <strong>နှစ်စဉ်မှတ်တမ်း (Admin only)</strong>
+        <div class="space"></div>
         <input id="recYear" type="number" placeholder="Year e.g. 2025">
         <input id="recQuery" type="search" placeholder="အမည် / ဖုန်း / Email ရိုက်ရှာ">
         <button class="btn" onclick="searchRecords()">Search</button>
       </div>
-      <div id="recGrid" class="grid cards"></div>
+      <div id="recGrid" class="grid"></div>
       <div id="recEmpty" class="empty">Admin အတွက်သာ…</div>
     </div>
   </section>
@@ -123,7 +104,7 @@
     <div class="wrap">
       <div class="card">
         <div class="row">
-          <h2>Admin</h2>
+          <strong>Admin Login</strong>
           <div class="space"></div>
           <input id="admEmail" type="email" placeholder="admin email">
           <input id="admPass"  type="password" placeholder="password">
@@ -159,14 +140,11 @@
           <h3>Donations & Events</h3>
           <input id="kbzNoteIn" placeholder="KBZPay note">
           <input id="cbNoteIn" placeholder="CBPay note">
-          <input id="ayaNoteIn" placeholder="AYAPay note">
           <div class="row gap">
             <label class="file"><span>KBZ QR</span><input id="kbzQR" type="file" accept="image/*"></label>
             <label class="file"><span>CB QR</span><input id="cbQR" type="file" accept="image/*"></label>
-            <label class="file"><span>AYA QR</span><input id="ayaQR" type="file" accept="image/*"></label>
           </div>
           <button class="btn" onclick="saveDonation()">Save Donation Setup</button>
-
           <hr class="line">
           <h4>Event Add</h4>
           <div class="row gap wrap">
@@ -200,8 +178,6 @@
           </div>
         </form>
       </div>
-
-      <p class="muted small mt">Non-admin users: Posts, Events, Donations ကိုကြည့်နိုင်၊ Calendar မှတ်ချက်များကိုဖတ်ရုံ၊ Records ကို ရှာကြည့်ရန် Admin လိုအပ်ပါသည်။</p>
     </div>
   </section>
 
