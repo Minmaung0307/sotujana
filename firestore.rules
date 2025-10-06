@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() { return request.auth != null; }
+
+    match /posts/{id} {
+      allow read: if true; // public
+      allow write, update, delete: if isAdmin();
+    }
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /meta/{doc} {
+      allow read: if true; // donation images & notes are public
+      allow write: if isAdmin();
+    }
+    match /subscribers/{id} {
+      allow read: if false; // protect emails
+      allow write: if true;  // anyone can subscribe
+    }
+    match /records/{id} {
+      allow read, write: if isAdmin(); // admin-only (contains personal data)
+    }
+  }
+}
