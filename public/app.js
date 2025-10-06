@@ -290,10 +290,16 @@ window.createPost = async(ev)=>{
 
 // render posts
 async function loadLatest(){
-  const host = $('#postGrid'); host.innerHTML='';
-  const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
-  let n=0; snap.forEach(d=>{ n++; renderPostCard(d.id, d.data(), host); });
-  $('#homeEmpty').style.display = n? 'none':'block';
+  const host = document.getElementById('postGrid');
+  host.innerHTML='';
+  try{
+    const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
+    let n=0; snap.forEach(d=>{ n++; renderPostCard(d.id, d.data(), host); });
+    document.getElementById('homeEmpty').style.display = n? 'none':'block';
+  }catch(e){
+    console.error('loadLatest error', e);
+    host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`;
+  }
 }
 function safeHTML(s){
   // simple sanitizer: strip <script>…</script>
@@ -394,8 +400,13 @@ async function getDayNote(iso){
   return snap.exists()? (snap.data().note||'') : '';
 }
 async function saveDayNote(iso, text){
-  // Firestore rules က admin only ဖြစ်နေမှာ — UI ကတော့ admin မဟုတ်ရင် textarea မပြ
-  await setDoc(doc(db,'eventNotes', iso), { note: text, ts: Date.now() });
+  try{
+    if (!auth.currentUser) return alert('Admin only');
+    await setDoc(doc(db,'eventNotes', iso), { note: text, ts: Date.now() });
+  }catch(e){
+    console.warn('saveDayNote failed', e);
+    alert('Cannot save note: ' + (e?.message||'permission'));
+  }
 }
 function dayISO(y,m,d){
   return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -477,6 +488,7 @@ function refreshRecordGate(){
   $('#recEmpty').textContent = isAdm? 'ရှာရန် နှစ်ထည့်ပြီး Search နှိပ်ပါ' : 'Admin အတွက်သာ ဖြစ်ပါသည်…';
 }
 window.saveRecord = async(ev)=>{
+  if (!auth.currentUser) return alert('Admin only');
   ev.preventDefault(); if(!auth.currentUser) return alert('Admin only');
   const y=Number($('#rYear').value), name=$('#rName').value.trim();
   const age=Number($('#rAge').value||0), nrc=$('#rNRC').value.trim();
