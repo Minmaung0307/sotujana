@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="my" data-theme="light" data-font="base">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>BuddhaCollege</title>
+
+  <!-- stop favicon 404 -->
+  <link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%A4%95%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;500;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="row">
+      <button class="icon-btn" id="btnMenu" aria-label="Toggle navigation">☰</button>
+      <div class="brand">
+        <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9d5.svg" alt="" width="24" height="24">
+        <h1>BuddhaCollege</h1>
+      </div>
+      <div class="space"></div>
+      <span id="authState" class="pill">Guest</span>
+      <button id="btnAdmin" class="btn sm" onclick="show('admin')">Admin</button>
+      <button class="btn sm" onclick="show('account')">Account</button>
+    </div>
+    <div id="upcomingWarn" class="warn-banner" role="status" aria-live="polite"></div>
+  </header>
+
+  <!-- Primary Nav + Settings as options -->
+  <nav id="mainNav" class="nav" aria-label="Primary">
+  <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
+  <button              data-tab="history" onclick="tab(this,'history')">🗂️ History</button>
+  <button              data-tab="donate"  onclick="tab(this,'donate')">🙏 Donate</button>
+  <button              data-tab="events"  onclick="tab(this,'events')">📅 Events</button>
+  <button              data-tab="records" onclick="tab(this,'records')">📘 Records</button>
+  <button              data-tab="map"     onclick="tab(this,'map')">🗺️ Map</button>
+  <button              data-tab="admin"   onclick="tab(this,'admin')">🔐 Admin</button>
+  <button              data-tab="account" onclick="tab(this,'account')">👤 Account</button>
+  <div class="space"></div>
+
+  <!-- (settings selects မပြောင်းရ) -->
+  <div class="row wrap" style="gap:6px">
+    <select id="selTheme" class="opt">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="warm">Warm</option>
+    </select>
+    <select id="selFont" class="opt">
+      <option value="small">A-</option>
+      <option value="base" selected>A</option>
+      <option value="large">A+</option>
+    </select>
+  </div>
+</nav>
+
+  <!-- HOME -->
+  <main id="home" class="section active" tabindex="-1">
+    <div class="wrap">
+      <div class="row toolbar">
+        <div class="pill">နေ့စဥ်လုပ်ငန်း • Daily Activities</div>
+        <div class="space"></div>
+        <form id="signupForm" class="row" onsubmit="signup(event)">
+          <input id="signupEmail" type="email" inputmode="email" placeholder="Email (အသစ်တင်ရင် အော်တို အသိပေး)" required>
+          <button class="btn primary" type="submit">Sign up</button>
+        </form>
+      </div>
+      <div id="postGrid" class="grid"></div>
+      <div id="homeEmpty" class="empty">ပို့စ်မရှိသေးပါ…</div>
+    </div>
+  </main>
+
+  <!-- HISTORY -->
+  <section id="history" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="row toolbar">
+        <select id="histMonth" aria-label="Month">
+          <option value="">All</option>
+          <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+          <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+          <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+          <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+        </select>
+        <input id="histYear" type="number" placeholder="2025" aria-label="Year">
+        <button class="btn" onclick="loadHistory()">Search</button>
+        <div class="space"></div>
+      </div>
+      <div id="histGrid" class="grid"></div>
+      <div id="histEmpty" class="empty">ရှာမတွေ့ပါ…</div>
+    </div>
+  </section>
+
+  <!-- DONATE -->
+  <section id="donate" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="card">
+        <h2 class="row">🙏 လှူဒါန်းခြင်း • Donations <span class="badge">KBZPay • CBPay</span></h2>
+        <p class="muted">QR ကို စကင်ဖတ်ပြီး လှူဒါန်းနိုင်ပါတယ်။ အော်နာမတ်ဗဗ…</p>
+        <div class="grid two">
+          <div class="card inset">
+            <h3>KBZPay</h3>
+            <img id="qrKBZ" class="qr" alt="KBZPay QR">
+            <p class="note" id="kbzNote"></p>
+          </div>
+          <div class="card inset">
+            <h3>CBPay</h3>
+            <img id="qrCB" class="qr" alt="CBPay QR">
+            <p class="note" id="cbNote"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Newsletter</h3>
+        <p class="muted">ပို့စ်အသစ်တင်တိုင်း Email ဖြင့် အသိပေး</p>
+        <form onsubmit="signup(event)">
+          <input id="signupEmail2" type="email" inputmode="email" placeholder="Email" required>
+          <button class="btn primary" type="submit">Sign up</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="events" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="row toolbar">
+        <div class="pill">အခါကြီး/ရက်ကြီးများ</div><div class="space"></div>
+        <div class="note">Admin မှ သတ်မှတ်ထားသော လာမည့်အခါကြီးများ</div>
+      </div>
+      <div id="eventUpcoming" class="list"></div>
+      <h3 class="mt">This Month</h3>
+      <div id="cal" class="calendar"></div>
+    </div>
+  </section>
+
+  <!-- RECORDS (Admin Only) -->
+  <section id="records" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="row toolbar">
+        <div class="pill">နှစ်စဉ်မှတ်တမ်း (Admin only)</div>
+        <div class="space"></div>
+        <input id="recYear" type="number" placeholder="Year e.g. 2025">
+        <input id="recQuery" type="search" placeholder="အမည် / ဖုန်း / Email ရိုက်ရှာ" aria-label="Search records">
+        <button class="btn" onclick="searchRecords()">Search</button>
+      </div>
+      <div id="recGrid" class="grid"></div>
+      <div id="recEmpty" class="empty">Admin အတွက်သာ ဖြစ်ပါသည်…</div>
+    </div>
+  </section>
+
+  <!-- MAP -->
+  <section id="map" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="card">
+        <h2>🗺️ Map & Directions</h2>
+        <p class="muted">ကျောင်းလိပ်စာ — ၃၄၀၇, ဗုဒ္ဓကောလိပ်, ဒဂုံမြို့သစ်တောင်ပိုင်း, ရန်ကုန်မြို့</p>
+        <div class="row wrap gap">
+          <a class="btn" id="btnDrive"   target="_blank" rel="noopener">🚗 Drive</a>
+          <a class="btn" id="btnMoto"    target="_blank" rel="noopener">🛵 Motorcycle</a>
+          <a class="btn" id="btnOpenMap" target="_blank" rel="noopener">📍 Open in Google Maps</a>
+        </div>
+        <p class="note mt">အကြောင်းပြချက်အချို့တွင် Motorcycle မပံ့ပိုးလျှင် Driving သို့ fallback ဖြစ်နိုင်ပါသည်။</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="admin" class="section" tabindex="-1">
+    <div class="wrap">
+      <div class="card">
+        <div class="row">
+          <h2>Admin Panel</h2>
+          <div class="space"></div>
+          <input id="admEmail" type="email" placeholder="admin email" autocomplete="username">
+          <input id="admPass"  type="password" placeholder="password" autocomplete="current-password">
+          <button class="btn primary" onclick="login()">Sign in</button>
+          <button class="btn" onclick="logout()">Sign out</button>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <!-- Multi-block Post Composer -->
+        <div class="card inset">
+          <h3>ပို့စ်အသစ်တင်ရန် (Multi-block)</h3>
+          <form id="postForm" onsubmit="createPost(event)">
+            <input id="pTitle" required placeholder="ခေါင်းစဉ်">
+            <label class="row" style="gap:8px">
+              <input id="pAllowHTML" type="checkbox"> <span class="note">Allow simple HTML (Admin only)</span>
+            </label>
+
+            <div id="blocks" class="blocks"></div>
+            <div class="row wrap gap">
+              <button class="btn" type="button" onclick="addBlock('text')">＋ စာသား</button>
+              <button class="btn" type="button" onclick="addBlock('image')">＋ ဓာတ်ပုံ</button>
+              <button class="btn" type="button" onclick="addBlock('video')">＋ ဗွီဒီယို</button>
+              <button class="btn" type="button" onclick="addBlock('audio')">＋ အသံ</button>
+            </div>
+
+            <div class="row gap mt">
+              <button class="btn primary" type="submit">Publish</button>
+              <span id="postMsg" class="muted"></span>
+            </div>
+          </form>
+        </div>
+
+        <!-- Donations & Events -->
+        <div class="card inset">
+          <h3>Donations & Events</h3>
+          <input id="kbzNoteIn" placeholder="KBZPay note e.g. Account Name">
+          <input id="cbNoteIn" placeholder="CBPay note">
+          <div class="row gap">
+            <label class="file"><span>KBZ QR</span><input id="kbzQR" type="file" accept="image/*"></label>
+            <label class="file"><span>CB QR</span><input id="cbQR" type="file" accept="image/*"></label>
+          </div>
+          <button class="btn" onclick="saveDonation()">Save Donation Setup</button>
+          <hr class="line">
+          <h4>Add Event</h4>
+          <div class="row gap wrap">
+            <input id="evTitle" placeholder="Event title">
+            <input id="evDate" type="date">
+            <textarea id="evDesc" placeholder="Event description (optional)"></textarea>
+            <button class="btn" onclick="addEvent()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yearly Records -->
+      <div class="card inset">
+        <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန် (Admin)</h3>
+        <form id="recForm" onsubmit="saveRecord(event)">
+          <div class="grid two">
+            <input id="rYear"   type="number" required placeholder="Year">
+            <input id="rName"   required placeholder="အမည်">
+            <input id="rAge"    type="number" placeholder="အသက်">
+            <input id="rNRC"    placeholder="မှတ်ပုံတင်">
+            <input id="rEdu"    placeholder="ပညာအရည်အချင်း">
+            <input id="rMother" placeholder="အမိအမည်">
+            <input id="rFather" placeholder="အဖအမည်">
+            <input id="rRole"   placeholder="လက်ရှိရာထူး">
+            <input id="rPhone"  placeholder="ဖုန်း">
+            <input id="rEmail"  type="email" placeholder="Email">
+            <label class="file"><span>ဓာတ်ပုံ</span><input id="rPhoto" type="file" accept="image/*"></label>
+          </div>
+          <div class="row gap mt">
+            <button class="btn primary" type="submit">Save Record</button>
+            <span id="recMsg" class="muted"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="account" class="section" tabindex="-1">
+  <div class="wrap">
+    <div class="card">
+      <h2>👤 Account</h2>
+      <p class="note">User/Staff များအတွက် Sign in / Sign up နေရာ — Admin မဟုတ်ပါက view only ဖြစ်နေမည်။</p>
+      <div class="grid two">
+        <div class="card inset">
+          <h3>Sign in</h3>
+          <input id="acEmail" type="email" placeholder="email@example.com" autocomplete="username">
+          <input id="acPass"  type="password" placeholder="password" autocomplete="current-password">
+          <div class="row gap mt">
+            <button class="btn primary" onclick="accountLogin()">Sign in</button>
+            <button class="btn" onclick="accountLogout()">Sign out</button>
+          </div>
+        </div>
+        <div class="card inset">
+          <h3>Sign up (optional)</h3>
+          <p class="note">Admin မဟုတ်ပါက post/edit/records မလုပ်နိုင်ပါ—view only</p>
+          <input id="acNewEmail" type="email" placeholder="email@example.com" autocomplete="username">
+          <input id="acNewPass"  type="password" placeholder="password (min 6 chars)" autocomplete="new-password">
+          <div class="row gap mt">
+            <button class="btn" onclick="accountSignup()">Create account</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt">
+        <h3>Current status</h3>
+        <div id="accountStatus" class="muted">Checking…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <footer class="footer">
+    © <span id="year"></span> Bhikkhu School • Firebase + EmailJS
+  </footer>
+
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(()=>{});
+      });
+    }
+  </script>
+</body>
+</html>
