@@ -1,6 +1,9 @@
 // app.js v2.1 (Login Modal)
 import { auth, db, st, applyPrefs } from './firebase.js';
-import { collection, addDoc, doc, getDoc, getDocs, setDoc, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
+import {
+  collection, addDoc, doc, getDoc, getDocs, setDoc,
+  query, where, orderBy, limit, serverTimestamp, deleteDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
 
@@ -204,40 +207,132 @@ async function loadEvents(){
 loadEvents();
 
 // ===== Records =====
+// ---- Records ----
+let editingId = null; // null => create, not null => update
+
 function refreshRecordGate(){
   const can = !!auth.currentUser && isAdmin;
   document.querySelector('#records .wrap').style.opacity = can? '1':'0.7';
   $('#recEmpty').textContent = can? 'Year ထည့်ပြီး Search' : 'Admin အတွက်သာ…';
   const nn = document.querySelector('.nonadmin-note'); if(nn) nn.style.display = can? 'none':'block';
 }
+
 window.saveRecord = async(ev)=>{
   ev.preventDefault(); if(!auth.currentUser) return alert('Admin only');
+
   const y=Number($('#rYear').value), name=$('#rName').value.trim();
   const age=Number($('#rAge').value||0), nrc=$('#rNRC').value.trim();
   const edu=$('#rEdu').value.trim(), mother=$('#rMother').value.trim(), father=$('#rFather').value.trim();
   const role=$('#rRole').value.trim(), phone=$('#rPhone').value.trim(), email=$('#rEmail').value.trim();
-  const photo=$('#rPhoto').files[0]||null;
-  let url=''; if(photo){ const r=sref(st, `records/${y}-${Date.now()}-${photo.name}`); await uploadBytes(r,photo); url=await getDownloadURL(r); }
-  await addDoc(collection(db,'records'), { y,name,age,nrc,edu,mother,father,role,phone,email,photo:url, ts:Date.now() });
-  // clear after save
+  const vow=$('#rVow')?.value.trim()||'';       // ဝါတော်
+  const addr=$('#rAddr')?.value.trim()||'';     // ယခင္နေရပ်လိပ်စာ
+
+  const photoFile=$('#rPhoto').files[0]||null;
+  let photo=''; if(photoFile){
+    const r=sref(st, `records/${y}-${Date.now()}-${photoFile.name}`);
+    await uploadBytes(r,photoFile);
+    photo=await getDownloadURL(r);
+  }
+
+  const payload = { y,name,age,vow,nrc,mother,father,addr,edu,role,phone,email,photo, ts:Date.now() };
+
+  if(editingId){
+    // update (merge: keep old photo if new not uploaded)
+    const prev = await getDoc(doc(db,'records', editingId));
+    const old  = prev.exists() ? prev.data() : {};
+    await setDoc(doc(db,'records', editingId), { ...old, ...payload, photo: photo||old.photo||'' });
+  } else {
+    await addDoc(collection(db,'records'), payload);
+  }
+
+  // clear & reset
   $('#recForm').reset();
-  $('#recMsg').textContent='Saved'; setTimeout(()=>$('#recMsg').textContent='',1500);
+  editingId = null;
+  $('#recMsg').textContent='Saved';
+  setTimeout(()=>$('#recMsg').textContent='',1500);
+
+  // refresh results if already searched
+  try { await window.searchRecords(); } catch(e){}
 };
 window.searchRecords = async()=>{
   if(!auth.currentUser || !isAdmin) return alert('Admin only');
   const y = Number($('#recYear').value||0);
   const qtext = ($('#recQuery').value||'').toLowerCase().trim();
   if(!y) return alert('Enter year');
+
   const host = $('#recGrid'); host.innerHTML='';
   const snap = await getDocs(query(collection(db,'records'), where('y','==',y)));
-  let n=0; snap.forEach(d=>{ const x=d.data();
-    const hay = [x.name,x.phone,x.email].map(v=>(v||'').toLowerCase()).join(' ');
+  let n=0;
+
+  snap.forEach(d=>{
+    const x = {id:d.id, ...d.data()};
+    const hay = [x.name,x.phone,x.email,(x.addr||''),(x.vow||'')].map(v=>(v||'').toLowerCase()).join(' ');
     if(qtext && !hay.includes(qtext)) return;
-    n++; const c=document.createElement('div'); c.className='card';
-    c.innerHTML = `<strong>${(x.name||'-')}</strong><div class="note">Age ${x.age||'-'} • ${x.role||'-'}</div><div class="note">Phone ${x.phone||'-'} • Email ${x.email||'-'}</div>`;
-    host.appendChild(c);
+
+    n++;
+    const img = x.photo ? `<img src="${x.photo}" alt="${x.name||''}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:8px">`
+                        : `<div style="height:220px;border-radius:12px;border:1px dashed #e5e7eb;display:flex;align-items:center;justify-content:center;color:#94a3b8">No Photo</div>`;
+
+    const item = document.createElement('div');
+    item.className = 'card';
+    item.innerHTML = `
+      ${img}
+      <ol style="padding-left:18px;margin:0">
+        <li>ဓာတ်ပုံ</li>
+        <li><strong>နာမည်</strong> — ${x.name||'-'}</li>
+        <li><strong>အသက်</strong> — ${x.age||'-'}</li>
+        <li><strong>ဝါတော်</strong> — ${x.vow||'-'}</li>
+        <li><strong>မှတ်ပုံတင်</strong> — ${x.nrc||'-'}</li>
+        <li><strong>မိဘအမည်</strong> — ${[x.mother,x.father].filter(Boolean).join(' / ')||'-'}</li>
+        <li><strong>ယခင်နေရပ်လိပ်စာ</strong> — ${x.addr||'-'}</li>
+        <li><strong>ပညာအရည်အချင်း</strong> — ${x.edu||'-'}</li>
+        <li><strong>လက်ရှိရာထူး</strong> — ${x.role||'-'}</li>
+        <li><strong>ဆက်သွယ်ရန်ဖုန်း</strong> — ${x.phone||'-'}</li>
+        <li><strong>ဆက်သွယ်ရန် email</strong> — ${x.email||'-'}</li>
+      </ol>
+      <div class="row" style="gap:8px;margin-top:10px">
+        <button class="btn" onclick="editRecord('${x.id}')">Edit</button>
+        <button class="btn" onclick="deleteRecord('${x.id}')">Delete</button>
+      </div>
+    `;
+    host.appendChild(item);
   });
+
   $('#recEmpty').style.display = n? 'none':'block';
+};
+
+window.editRecord = async(id)=>{
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  const snap = await getDoc(doc(db,'records', id));
+  if(!snap.exists()) return alert('Record not found');
+  const x = snap.data();
+
+  editingId = id;
+  // Fields load
+  $('#rYear').value = x.y||'';
+  $('#rName').value = x.name||'';
+  $('#rAge').value  = x.age||'';
+  $('#rNRC').value  = x.nrc||'';
+  $('#rEdu').value  = x.edu||'';
+  $('#rMother').value = x.mother||'';
+  $('#rFather').value = x.father||'';
+  $('#rRole').value   = x.role||'';
+  $('#rPhone').value  = x.phone||'';
+  $('#rEmail').value  = x.email||'';
+  if($('#rVow'))  $('#rVow').value  = x.vow||'';
+  if($('#rAddr')) $('#rAddr').value = x.addr||'';
+
+  alert('Loaded into form. Update values and press Save Record.');
+  // Admin tab ကို ပြလိုက်
+  show('admin');
+};
+
+window.deleteRecord = async(id)=>{
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  if(!confirm('ဒီမှတ်တမ်းကို ဖျက်မလား?')) return;
+  await deleteDoc(doc(db,'records', id));
+  // refresh results
+  await window.searchRecords();
 };
 
 // ===== Subscribers =====
