@@ -64,12 +64,9 @@ async function updateAuthUI(u){
   refreshRecordGate();
 }
 // onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
-onAuthStateChanged(auth, (u)=> {
-  updateAuthUI(u);
-  if (u) {
-    // isAdmin ကို updateAuthUI/checkAdmin ထဲမှာ ပြောင်းပြီးသွားမယ်
-    loadLatest(); // admin buttons ကို ပြန်အဖြည့် render
-  }
+onAuthStateChanged(auth, async (u)=> { 
+  await updateAuthUI(u); 
+  loadLatest(); // login/logout စက်ဝိုင်းတိုင်း posts ကို ပြန် render
 });
 
 window.logout = async ()=>{
@@ -128,12 +125,23 @@ window.createPost = async(ev)=>{
 
 function safeHTML(s){ return (s||'').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,''); }
 function escapeHTML(s){ return (s||'').replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;","&quot;":"&quot;"}[m])) }
+
 function renderBlocks(arr){
   return (arr||[]).map(b=>{
-    if(b.type==='text') return `<div style="white-space:pre-wrap">${b.allowHTML? safeHTML(b.text): escapeHTML(b.text)}</div>`;
-    if(b.type==='image') return `<img src="${b.url}" style="width:100%;border:1px solid #e5e7eb;border-radius:10px">`;
-    if(b.type==='video') return `<video src="${b.url}" controls style="width:100%;border-radius:10px"></video>`;
-    if(b.type==='audio') return `<audio src="${b.url}" controls style="width:100%"></audio>`;
+    if(b.type==='text'){
+      // allowHTML တင်ထားတဲ့ block တွေကိုသာ safeHTML နဲ့ render, အခြား text တွေကို escape
+      return `<div style="white-space:pre-wrap">${b.allowHTML ? safeHTML(b.text||'') : escapeHTML(b.text||'')}</div>`;
+    }
+    if(b.type==='image'){
+      // center + 65%
+      return `<div class="post-media"><img src="${b.url}" alt=""></div>`;
+    }
+    if(b.type==='video'){
+      return `<div class="post-media"><video src="${b.url}" controls></video></div>`;
+    }
+    if(b.type==='audio'){
+      return `<div class="post-media"><audio src="${b.url}" controls></audio></div>`;
+    }
     return '';
   }).join('');
 }
@@ -205,52 +213,45 @@ window.deletePost = async function(id){
 };
 
 async function loadLatest(){
-  const host = document.getElementById('postGrid');
-  host.innerHTML = '';
+  const host = document.getElementById('postGrid'); 
+  host.innerHTML='';
+  try{
+    const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
+    let n=0; 
+    snap.forEach(d=>{
+      const p=d.data(); n++; 
+      const el=document.createElement('div'); 
+      el.className='card';
 
-  try {
-    const snap = await getDocs(
-      query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24))
-    );
-
-    let n = 0;
-    snap.forEach(d => {
-      const p = d.data(); n++;
-
-      // server likes + local shadow likes ကို ယှဉ်ပြီး ပြမဲ
-      const likesServer = (typeof p.likes === 'number') ? p.likes : 0;
+      // like count ကို local shadow နဲ့ထိန်း (refresh မပျောက်)
+      const likesServer = typeof p.likes==='number' ? p.likes : 0;
       const liked = isLikedLocal(d.id);
-      const shadow = getLastCount(d.id);
-      const likesToShow = (liked && shadow != null && shadow > likesServer) ? shadow : likesServer;
+      const shadow = (()=>{
+        const n = Number(localStorage.getItem('likes_last_'+d.id));
+        return Number.isFinite(n)? n: null;
+      })();
+      const likes = (liked && shadow!=null && shadow>likesServer) ? shadow : likesServer;
 
-      const el = document.createElement('div');
-      el.className = 'card'; // block UI (1-row per post) — CSS ထဲမှာ card ကို block အဖြစ်ပြထားမယ်
       el.innerHTML = `
-        <h3>${escapeHTML(p.title || 'Untitled')}</h3>
-        ${renderBlocks(p.blocks || [])}
-
+        <h3>${escapeHTML(p.title||'Untitled')}</h3>
+        ${renderBlocks(p.blocks||[])}
         <div class="row mt post-foot">
-          <span class="note">${p.month || '?'} / ${p.year || '?'}</span>
+          <span class="note">${p.month||'?'} / ${p.year||'?'}</span>
           <div class="space"></div>
-
-          <button class="like-btn ${liked ? 'liked' : ''}" data-like="${d.id}"
-                  onclick="toggleLike('${d.id}')">
-            ❤ <span class="like-count">${likesToShow}</span>
+          <button class="like-btn ${liked?'liked':''}" data-like="${d.id}" onclick="toggleLike('${d.id}')">
+            ❤ <span class="like-count">${likes}</span>
           </button>
-
           ${isAdmin ? `
             <div class="post-actions">
               <button class="btn small edit" onclick="editPost('${d.id}')">✏ Edit</button>
               <button class="btn small danger" onclick="deletePost('${d.id}')">🗑 Delete</button>
             </div>` : ''}
-        </div>
-      `;
+        </div>`;
       host.appendChild(el);
     });
-
-    document.getElementById('homeEmpty').style.display = n ? 'none' : 'block';
-  } catch (e) {
-    host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`;
+    document.getElementById('homeEmpty').style.display = n? 'none':'block';
+  }catch(e){ 
+    host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`; 
   }
 }
 loadLatest();
