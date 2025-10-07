@@ -30,9 +30,13 @@ body{ margin:0; background:var(--bg); color:var(--ink);
 .note{ color:var(--muted); font-size:.95rem } .small{ font-size:.85rem }
 footer{ text-align:center; color:var(--muted); padding:24px }
 .cards .card{ transition: transform .15s ease } .cards .card:hover{ transform: translateY(-2px) }
+
+/* Posts composer */
 .blocks{ display:flex; flex-direction:column; gap:10px; margin:10px 0 }
 .block{ border:1px dashed var(--line); border-radius:12px; padding:10px; background:#fff }
 .block textarea{ min-height:90px }
+
+/* Calendar */
 .calendar{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px }
 .calendar .day{ border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px; min-height:130px; display:flex; flex-direction:column }
 .calendar .day .d{ font-weight:700; font-size:.9rem }
@@ -40,14 +44,20 @@ footer{ text-align:center; color:var(--muted); padding:24px }
 .calendar .day .note-view{ margin-top:6px; color:#64748b; white-space:pre-wrap; font-size:.9rem }
 .tag{ font-size:.75rem; padding:2px 6px; border-radius:999px; background:#e0f2fe; color:#075985; display:inline-block; margin-top:6px }
 .month-nav .pill{ background:#ecfeff; color:#0e7490 }
+
+/* Modal */
 .modal{ position:fixed; inset:0; display:none; z-index:50 }
 .modal.show{ display:block }
 .modal-backdrop{ position:absolute; inset:0; background:rgba(2,8,23,.5); backdrop-filter: blur(2px) }
 .modal-card{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:min(420px,92vw); background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow: var(--shadow) }
 .modal-card input{ width:100%; margin:8px 0; padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff }
+
+/* Responsive */
 @media (min-width: 640px){ .grid.two{ grid-template-columns:repeat(2,1fr) } .grid.three{ grid-template-columns:repeat(3,1fr) } }
 @media (min-width: 1024px){ .grid{ grid-template-columns:repeat(3,1fr) } .wrap{ max-width:1200px } }
+
+/* Themes */
 html[data-theme="dark"]{
   --bg:#0b1220; --card:#101827; --ink:#e5e7eb; --muted:#94a3b8; --line:#1f2937; --brand:#38bdf8; --accent:#60a5fa;
   background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(#0b1220, #0b1220);
@@ -57,4 +67,6 @@ html[data-theme="warm"]{ --bg:#fffaf3; --card:#fff7ed; --ink:#3f2d1c; --muted:#7
 html[data-theme="emerald"]{ --bg:#effdf5; --card:#ffffff; --ink:#064e3b; --muted:#0f766e; --line:#c7f0da; --brand:#10b981; --accent:#34d399; }
 html[data-theme="ocean"]{ --bg:#ecfeff; --card:#ffffff; --ink:#0e7490; --muted:#0284c7; --line:#bae6fd; --brand:#06b6d4; --accent:#22d3ee; }
 html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#be123c; --line:#fecdd3; --brand:#f43f5e; --accent:#fb7185; }
+
+/* Gradient */
 .gradient{ background: linear-gradient(135deg, rgba(34,211,238,.12), rgba(2,132,199,.06)); }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>BuddhaCollege-MM</title>
+  <title>BuddhaCollege</title>
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <!-- Topbar -->
   <header class="topbar shadow">
     <div class="row">
       <div class="brand">BuddhaCollege</div>
@@ -22,6 +23,7 @@
     </div>
   </header>
 
+  <!-- Nav + settings -->
   <nav id="mainNav" class="nav shadow">
     <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
     <button              data-tab="events" onclick="tab(this,'events')">📅 Events</button>
@@ -46,6 +48,7 @@
     </div>
   </nav>
 
+  <!-- HOME -->
   <main id="home" class="section active">
     <div class="wrap">
       <div class="hero card gradient">
@@ -61,6 +64,7 @@
     </div>
   </main>
 
+  <!-- EVENTS -->
   <section id="events" class="section">
     <div class="wrap">
       <div class="row toolbar">
@@ -78,6 +82,7 @@
     </div>
   </section>
 
+  <!-- DONATE -->
   <section id="donate" class="section">
     <div class="wrap">
       <div class="card">
@@ -103,6 +108,7 @@
     </div>
   </section>
 
+  <!-- RECORDS -->
   <section id="records" class="section">
     <div class="wrap">
       <div class="card gradient">
@@ -113,14 +119,13 @@
         <input id="recYear" type="number" placeholder="Year e.g. 2025">
         <input id="recQuery" type="search" placeholder="အမည် / ဖုန်း / Email ရိုက်ရှာ">
         <button class="btn" onclick="searchRecords()">Search</button>
-        <button class="btn" onclick="exportRecordsCSV()">Export Excel</button>
-        <button class="btn" onclick="exportRecordsPDF()">Export PDF</button>
       </div>
       <div id="recGrid" class="grid cards"></div>
       <div id="recEmpty" class="empty">Admin အတွက်သာ…</div>
     </div>
   </section>
 
+  <!-- ADMIN (still available after login) -->
   <section id="admin" class="section" style="display:none">
     <div class="wrap">
       <div class="grid two">
@@ -147,7 +152,7 @@
         </div>
 
         <div class="card inset">
-          <h3>Donations</h3>
+          <h3>Donations & Events</h3>
           <input id="kbzNoteIn" placeholder="KBZPay note">
           <input id="cbNoteIn" placeholder="CBPay note">
           <input id="ayaNoteIn" placeholder="AYAPay note">
@@ -157,6 +162,15 @@
             <label class="file"><span>AYA QR</span><input id="ayaQR" type="file" accept="image/*"></label>
           </div>
           <button class="btn" onclick="saveDonation()">Save Donation Setup</button>
+
+          <hr class="line">
+          <h4>Event Add</h4>
+          <div class="row gap wrap">
+            <input id="evTitle" placeholder="Event title">
+            <input id="evDate" type="date">
+            <textarea id="evDesc" placeholder="Event description (optional)"></textarea>
+            <button class="btn" onclick="addEvent()">Add</button>
+          </div>
         </div>
       </div>
 
@@ -166,14 +180,14 @@
           <div class="grid two">
             <input id="rYear"   type="number" required placeholder="Year">
             <input id="rName"   required placeholder="အမည်">
-            <input id="rAge"    type="number" placeholder="အသက်">
             <input id="rVow"    placeholder="ဝါတော်">
+            <input id="rAge"    type="number" placeholder="အသက်">
             <input id="rNRC"    placeholder="မှတ်ပုံတင်">
+            <input id="rEdu"    placeholder="ပညာအရည်အချင်း">
             <input id="rMother" placeholder="အမိအမည်">
             <input id="rFather" placeholder="အဖအမည်">
-            <input id="rAddr"   placeholder="ယခင်နေရပ်လိပ်စာ">
-            <input id="rEdu"    placeholder="ပညာအရည်အချင်း">
             <input id="rRole"   placeholder="လက်ရှိရာထူး">
+            <input id="rAddr"   placeholder="ယခင်နေရပ်လိပ်စာ">
             <input id="rPhone"  placeholder="ဖုန်း">
             <input id="rEmail"  type="email" placeholder="Email">
             <label class="file"><span>ဓာတ်ပုံ</span><input id="rPhoto" type="file" accept="image/*"></label>
@@ -187,6 +201,7 @@
     </div>
   </section>
 
+  <!-- LOGIN MODAL -->
   <div id="loginModal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" onclick="closeLogin()"></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -201,7 +216,7 @@
       <div class="row">
         <button class="btn primary" onclick="loginModal()">Sign in</button>
       </div>
-      <p class="note small">အားလုံးကိုယ်စိတ်နှစ်ဖြာ အေးချမ်းကြပါစေ</p>
+      <p class="note small">အားလုံးကိုယ်စိတ်နှစ်ဖြာ အေးချမ်းကြပါစေ ...</p>
     </div>
   </div>
 
