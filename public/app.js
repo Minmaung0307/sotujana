@@ -1,8 +1,8 @@
-
+// app.js v2.2
 import { auth, db, st, applyPrefs } from './firebase.js';
 import {
-  collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc,
-  query, where, orderBy, limit, serverTimestamp, deleteDoc, increment
+  collection, addDoc, doc, getDoc, getDocs, setDoc,
+  query, where, orderBy, limit, serverTimestamp, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
@@ -63,11 +63,7 @@ async function updateAuthUI(u){
   }
   refreshRecordGate();
 }
-// onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
-onAuthStateChanged(auth, async (u)=> { 
-  await updateAuthUI(u); 
-  loadLatest(); // login/logout စက်ဝိုင်းတိုင်း posts ကို ပြန် render
-});
+onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
 
 window.logout = async ()=>{
   try{ await signOut(auth); alert('Signed out'); location.reload(); }
@@ -91,21 +87,26 @@ async function uploadAny(file, folder){
   return await getDownloadURL(r);
 }
 
-// Create or Update Post
 window.createPost = async(ev)=>{
   ev.preventDefault();
   if(!auth.currentUser || !isAdmin) return alert('Admin only');
   const title = document.getElementById('pTitle').value.trim();
-  const allowHTML = document.getElementById('pAllowHTML').checked;
+  const allowHTML = document.getElementById('pAllowHTML')?.checked || false;
   const postId = (document.getElementById('pId')?.value || '').trim();
   const blocks = [];
-  for(const el of blocksHost.children){
+  const container = document.getElementById('blocks');
+  for(const el of container.children){
     const type = el.getAttribute('data-type');
-    if(type==='text') blocks.push({ type:'text', text: el.querySelector('[data-role="text"]').value, allowHTML });
-    else {
-      const f = el.querySelector('[data-role="file"]').files[0]||null;
-      const url = f ? await uploadAny(f, 'posts') : '';
-      blocks.push({ type, url });
+    if(type==='text'){
+      const txt = el.querySelector('[data-role="text"]')?.value || '';
+      blocks.push({ type:'text', text: txt, allowHTML });
+    }else{
+      const remove = el.querySelector('[data-role="remove"]')?.checked || false;
+      if(remove) continue;
+      const file = el.querySelector('[data-role="file"]')?.files?.[0] || null;
+      let url = el.getAttribute('data-existing-url') || '';
+      if(file){ url = await uploadAny(file, 'posts'); }
+      if(url) blocks.push({ type, url });
     }
   }
   const d=new Date();
@@ -117,142 +118,34 @@ window.createPost = async(ev)=>{
     alert('✅ Post published successfully!');
   }
   // reset form
-  blocksHost.innerHTML=''; addBlock('text'); document.getElementById('pTitle').value='';
-  if (document.getElementById('pId')) document.getElementById('pId').value='';
-  document.getElementById('postMsg').textContent='';
+  const host = document.getElementById('blocks'); if(host){ host.innerHTML=''; host.insertAdjacentHTML('beforeend', `<div class="block" data-type="text"><textarea placeholder="Text or HTML..." data-role="text"></textarea></div>`); }
+  document.getElementById('pTitle').value='';
+  const idEl = document.getElementById('pId'); if(idEl) idEl.value='';
+  document.getElementById('postMsg')?.textContent='';
   loadLatest();
 };
 
 function safeHTML(s){ return (s||'').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,''); }
 function escapeHTML(s){ return (s||'').replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;","&quot;":"&quot;"}[m])) }
-
 function renderBlocks(arr){
-  return (arr||[]).map(b=>{
-    if(b.type==='text'){
-      // allowHTML တင်ထားတဲ့ block တွေကိုသာ safeHTML နဲ့ render, အခြား text တွေကို escape
-      return `<div style="white-space:pre-wrap">${b.allowHTML ? safeHTML(b.text||'') : escapeHTML(b.text||'')}</div>`;
-    }
-    if(b.type==='image'){
-      // center + 65%
-      return `<div class="post-media"><img src="${b.url}" alt=""></div>`;
-    }
-    if(b.type==='video'){
-      return `<div class="post-media"><video src="${b.url}" controls></video></div>`;
-    }
-    if(b.type==='audio'){
-      return `<div class="post-media"><audio src="${b.url}" controls></audio></div>`;
-    }
+  return arr.map(b=>{
+    if(b.type==='text') return `<div style="white-space:pre-wrap">${b.allowHTML? safeHTML(b.text): escapeHTML(b.text)}</div>`;
+    if(b.type==='image') return `<img src="${b.url}" style="width:100%;border:1px solid #e5e7eb;border-radius:10px">`;
+    if(b.type==='video') return `<video src="${b.url}" controls style="width:100%;border-radius:10px"></video>`;
+    if(b.type==='audio') return `<audio src="${b.url}" controls style="width:100%"></audio>`;
     return '';
   }).join('');
 }
-
-// --- Like helpers (မရှိသေးရင် ထည့်ပါ) ---
-function isLikedLocal(id){ return localStorage.getItem('liked_'+id)==='1'; }
-function setLikedLocal(id, v){ if(v) localStorage.setItem('liked_'+id,'1'); else localStorage.removeItem('liked_'+id); }
-function getLastCount(id){
-  const n = Number(localStorage.getItem('likes_last_'+id));
-  return Number.isFinite(n) ? n : null;
-}
-function setLastCount(id, n){
-  localStorage.setItem('likes_last_'+id, String(n));
-}
-
-// toggleLike (မရှိသေးရင် ထည့်ပါ)
-window.toggleLike = async function(id){
-  const btn = document.querySelector(`[data-like="${id}"]`);
-  if(!btn) return;
-  const countEl = btn.querySelector('.like-count');
-  const wasLiked = isLikedLocal(id);
-  const cur = parseInt(countEl?.textContent||'0',10);
-  const next = wasLiked ? Math.max(0, cur-1) : cur+1;
-
-  // optimistic UI
-  btn.classList.toggle('liked', !wasLiked);
-  if(countEl) countEl.textContent = String(next);
-  setLikedLocal(id, !wasLiked);
-  setLastCount(id, next);
-
-  // server-side increment (rules မဖြစ်သေးရင် error ကို လျစ်လျူရှု)
-  try{
-    await updateDoc(doc(db,'posts', id), { likes: increment(wasLiked ? -1 : 1) });
-  }catch(e){}
-};
-
-// Admin edit/delete
-window.editPost = async function(id){
-  if(!auth.currentUser || !isAdmin) return alert('Admin only');
-  const snap = await getDoc(doc(db,'posts', id));
-  if(!snap.exists()) return alert('Post not found');
-  const p = snap.data();
-  document.getElementById('pTitle').value = p.title||'';
-  const allow = !!(p.blocks||[]).find(b=>b.type==='text' && b.allowHTML===true);
-  document.getElementById('pAllowHTML').checked = allow;
-  // rebuild blocks
-  blocksHost.innerHTML='';
-  (p.blocks||[]).forEach(b=>{
-    if(b.type==='text'){
-      const wrap = document.createElement('div'); wrap.innerHTML = blockTpl('text'); const el = wrap.firstElementChild;
-      el.querySelector('[data-role="text"]').value = b.text||''; blocksHost.appendChild(el);
-    }else{
-      const hint = document.createElement('div'); hint.className='block';
-      hint.innerHTML = `<div class="note">(${b.type}) attached — re-upload to replace</div>`;
-      blocksHost.appendChild(hint);
-    }
-  });
-  document.getElementById('pId').value = id;
-  show('admin');
-  window.scrollTo({top:0, behavior:'smooth'});
-};
-
-window.deletePost = async function(id){
-  if(!auth.currentUser || !isAdmin) return alert('Admin only');
-  if(!confirm('ဖျက်မလား?')) return;
-  await deleteDoc(doc(db,'posts', id));
-  alert('🗑 Deleted');
-  loadLatest();
-};
-
 async function loadLatest(){
-  const host = document.getElementById('postGrid'); 
-  host.innerHTML='';
+  const host = document.getElementById('postGrid'); host.innerHTML='';
   try{
     const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
-    let n=0; 
-    snap.forEach(d=>{
-      const p=d.data(); n++; 
-      const el=document.createElement('div'); 
-      el.className='card';
-
-      // like count ကို local shadow နဲ့ထိန်း (refresh မပျောက်)
-      const likesServer = typeof p.likes==='number' ? p.likes : 0;
-      const liked = isLikedLocal(d.id);
-      const shadow = (()=>{
-        const n = Number(localStorage.getItem('likes_last_'+d.id));
-        return Number.isFinite(n)? n: null;
-      })();
-      const likes = (liked && shadow!=null && shadow>likesServer) ? shadow : likesServer;
-
-      el.innerHTML = `
-        <h3>${escapeHTML(p.title||'Untitled')}</h3>
-        ${renderBlocks(p.blocks||[])}
-        <div class="row mt post-foot">
-          <span class="note">${p.month||'?'} / ${p.year||'?'}</span>
-          <div class="space"></div>
-          <button class="like-btn ${liked?'liked':''}" data-like="${d.id}" onclick="toggleLike('${d.id}')">
-            ❤ <span class="like-count">${likes}</span>
-          </button>
-          ${isAdmin ? `
-            <div class="post-actions">
-              <button class="btn small edit" onclick="editPost('${d.id}')">✏ Edit</button>
-              <button class="btn small danger" onclick="deletePost('${d.id}')">🗑 Delete</button>
-            </div>` : ''}
-        </div>`;
+    let n=0; snap.forEach(d=>{ const p=d.data(); n++; const el=document.createElement('div'); el.className='card';
+      el.innerHTML = `<h3>${escapeHTML(p.title||'Untitled')}</h3>${renderBlocks(p.blocks||[])}<div class="note mt">${p.month||'?'} / ${p.year||'?'}</div>`;
       host.appendChild(el);
     });
     document.getElementById('homeEmpty').style.display = n? 'none':'block';
-  }catch(e){ 
-    host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`; 
-  }
+  }catch(e){ host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`; }
 }
 loadLatest();
 
@@ -268,7 +161,7 @@ async function loadDonation(){
   document.getElementById('ayaNote').textContent = x.ayaNote||'';
 }
 window.saveDonation = async ()=>{
-  if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  if(!auth.currentUser) return alert('Admin only');
   async function up(id){ const f=document.getElementById(id).files[0]||null; if(!f) return ''; const r=sref(st,`donations/${Date.now()}-${f.name}`); await uploadBytes(r,f); return await getDownloadURL(r); }
   const kbzQR=await up('kbzQR'), cbQR=await up('cbQR'), ayaQR=await up('ayaQR');
   const kbzNote=document.getElementById('kbzNoteIn').value.trim();
@@ -286,7 +179,7 @@ const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct',
 window.prevMonth = ()=>{ cur = new Date(cur.getFullYear(), cur.getMonth()-1, 1); loadEvents(); };
 window.nextMonth = ()=>{ cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1); loadEvents(); };
 async function getDayNote(iso){ const s=await getDoc(doc(db,'eventNotes', iso)); return s.exists()? (s.data().note||'') : ''; }
-async function saveDayNote(iso, text){ if(!auth.currentUser || !isAdmin) return alert('Admin only'); await setDoc(doc(db,'eventNotes', iso), { note:text, ts:Date.now() }); }
+async function saveDayNote(iso, text){ if(!auth.currentUser) return alert('Admin only'); await setDoc(doc(db,'eventNotes', iso), { note:text, ts:Date.now() }); }
 function dayISO(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 async function renderCalendar(arr){
   const c = document.getElementById('cal'); c.innerHTML='';
@@ -329,7 +222,7 @@ function refreshRecordGate(){
   const nn = document.querySelector('.nonadmin-note'); if(nn) nn.style.display = can? 'none':'block';
 }
 window.saveRecord = async(ev)=>{
-  ev.preventDefault(); if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  ev.preventDefault(); if(!auth.currentUser) return alert('Admin only');
   const y=Number(document.getElementById('rYear').value), name=document.getElementById('rName').value.trim();
   const age=Number(document.getElementById('rAge').value||0), nrc=document.getElementById('rNRC').value.trim();
   const vow=document.getElementById('rVow').value.trim();
@@ -361,8 +254,8 @@ window.searchRecords = async()=>{
     if(qtext && !hay.includes(qtext)) return;
     n++;
     const img = x.photo
-      ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
-      : `<div class="rec-photo-box empty">No Photo</div>`;
+  ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
+  : `<div class="rec-photo-box empty">No Photo</div>`;
     const item = document.createElement('div'); item.className='card';
     item.innerHTML = `${img}
       <ol style="padding-left:18px;margin:0">
@@ -380,7 +273,7 @@ window.searchRecords = async()=>{
       </ol>
       <div class="row" style="gap:8px;margin-top:10px">
         <button class="btn" onclick="editRecord('${x.id}')">Edit</button>
-        <button class="btn danger" onclick="deleteRecord('${x.id}')">Delete</button>
+        <button class="btn" onclick="deleteRecord('${x.id}')">Delete</button>
       </div>`;
     host.appendChild(item);
   });
@@ -413,7 +306,6 @@ window.deleteRecord = async(id)=>{
   await deleteDoc(doc(db,'records', id));
   await window.searchRecords();
 };
-
 // Export helpers
 async function fetchYearRecords(){ 
   const y = Number(document.getElementById('recYear').value||0);
@@ -441,8 +333,8 @@ async function fetchYearRecords(){
 function toCSV(rows){
   const head = ['ဓာတ်ပုံ(URL)','နာမည်','အသက်','ဝါတော်','မှတ်ပုံတင်','မိဘအမည်','ယခင်နေရပ်လိပ်စာ','ပညာအရည်အချင်း','လက်ရှိရာထူး','ဖုန်း','Email'];
   const body = rows.map(r=>[r.photo,r.name,r.age,r.vow,r.nrc,r.parents,r.addr,r.edu,r.role,r.phone,r.email]
-    .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-  return [head.join(','), body].filter(Boolean).join('\r\n');
+    .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  return [head.join(','), ...body].join('\r\n');
 }
 window.exportRecordsCSV = async ()=>{
   try{
@@ -496,4 +388,49 @@ window.exportRecordsPDF = async ()=>{
     </body></html>`);
     win.document.close();
   }catch(e){ alert('Export PDF failed: ' + e.message); }
+};
+
+window.editPost = async function(id){
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  const snap = await getDoc(doc(db,'posts', id));
+  if(!snap.exists()) return alert('Post not found');
+  const p = snap.data();
+  document.getElementById('pTitle').value = p.title||'';
+  const allow = !!(p.blocks||[]).find(b=>b.type==='text' && b.allowHTML===true);
+  const allowEl = document.getElementById('pAllowHTML'); if(allowEl) allowEl.checked = allow;
+  const host = document.getElementById('blocks');
+  host.innerHTML='';
+  (p.blocks||[]).forEach(b=>{
+    if(b.type==='text'){
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `<div class="block" data-type="text">
+          <textarea placeholder="Text or HTML..." data-role="text"></textarea>
+        </div>`;
+      const el = wrap.firstElementChild;
+      el.querySelector('[data-role="text"]').value = b.text||'';
+      host.appendChild(el);
+    }else{
+      const preview = b.type==='image' ? `<img src="${b.url}" class="prev">` :
+                     b.type==='video' ? `<video src="${b.url}" class="prev" controls></video>` :
+                     `<audio src="${b.url}" class="prev" controls></audio>`;
+      const accept = b.type==='image' ? 'image/*' : b.type==='video' ? 'video/*' : 'audio/*';
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `<div class="block" data-type="${b.type}" data-existing-url="${b.url}">
+          <div class="post-media">${preview}</div>
+          <div class="media-input">
+            <label class="file small">
+              <span>Replace ${b.type.toUpperCase()}</span>
+              <input type="file" accept="${accept}" data-role="file"/>
+            </label>
+            <label class="switch">
+              <input type="checkbox" data-role="remove">
+              <span>Remove this ${b.type}</span>
+            </label>
+          </div>
+        </div>`;
+      host.appendChild(wrap.firstElementChild);
+    }
+  });
+  const idEl = document.getElementById('pId'); if(idEl) idEl.value = id;
+  show('admin'); window.scrollTo({top:0, behavior:'smooth'});
 };

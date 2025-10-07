@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;600;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0ea5e9">
 </head>
 <body>
   <header class="topbar shadow">
@@ -127,7 +129,6 @@
         <div class="card inset">
           <h3>ပို့စ်အသစ်တင်ရန် (Raw HTML အပါအဝင်)</h3>
           <form id="postForm" onsubmit="createPost(event)">
-            <input type="hidden" id="pId">
             <input id="pTitle" required placeholder="ခေါင်းစဉ်">
             <label class="row" style="gap:8px">
               <input id="pAllowHTML" type="checkbox" checked> <span class="note">Allow raw HTML</span>
