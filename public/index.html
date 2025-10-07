@@ -146,12 +146,19 @@
           </form>
         </div>
 
-        <div class="card donate-admin">
-  <h3 class="donate-title">Donations (KBZPay • CBPay • AYAPay)</h3>
+        <!-- Admin → Donations -->
+<div class="card inset donate-admin fancy">
+  <div class="head row">
+    <h3 class="section-title">Donations (KBZPay • CBPay • AYAPay)</h3>
+    <div class="space"></div>
+    <button class="btn primary soft" onclick="saveDonation()">💾 Save</button>
+  </div>
+  <p class="subtle">* ဆောင်ရွက်ပြီးလျှင် Donate page မှာ Public ပြသမည်</p>
 
-  <div class="donate-wrapper">
+  <div class="donate-rows">
     <!-- KBZ Group -->
-    <div class="donate-box">
+    <div class="donate-box tone-kbz">
+      <div class="ribbon"></div>
       <label class="lbl">KBZPay note</label>
       <input id="kbzNoteIn" placeholder="BuddhaCollege">
       <label class="file qrfile">
@@ -161,7 +168,8 @@
     </div>
 
     <!-- CB Group -->
-    <div class="donate-box">
+    <div class="donate-box tone-cb">
+      <div class="ribbon"></div>
       <label class="lbl">CBPay note</label>
       <input id="cbNoteIn" placeholder="BuddhaCollege">
       <label class="file qrfile">
@@ -171,7 +179,8 @@
     </div>
 
     <!-- AYA Group -->
-    <div class="donate-box">
+    <div class="donate-box tone-aya">
+      <div class="ribbon"></div>
       <label class="lbl">AYAPay note</label>
       <input id="ayaNoteIn" placeholder="BuddhaCollege">
       <label class="file qrfile">
@@ -180,8 +189,6 @@
       </label>
     </div>
   </div>
-
-  <button class="save-btn" onclick="saveDonation()">💾 Save</button>
 </div>
 
       <div class="card inset">
