@@ -83,7 +83,8 @@ window.loginModal = async () => {
     await signInWithEmailAndPassword(auth, email, pass);
     closeLogin();
     alert("Signed in");
-    loadLatest();
+    // loadLatest();
+    loadPostsPage(0);
     show("admin");
   } catch (e) {
     alert("Login failed: " + e.message);
@@ -123,7 +124,8 @@ async function updateAuthUI(u) {
 }
 onAuthStateChanged(auth, function (u) {
   updateAuthUI(u).then(function () {
-    loadLatest(); // login/logout အတိုင်း posts UI ပြန်ဖော်ပြ
+    loadPostsPage(0);
+    // loadLatest(); // login/logout အတိုင်း posts UI ပြန်ဖော်ပြ
   });
 });
 
@@ -234,7 +236,8 @@ window.createPost = async (ev) => {
   if (idEl) idEl.value = "";
   const msg = document.getElementById("postMsg");
   if (msg) msg.textContent = "";
-  loadLatest();
+  // loadLatest();
+  loadPostsPage(0);
 };
 
 // --- Admin: Search / Manage Posts ---
