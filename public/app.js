@@ -1,8 +1,8 @@
-// app.js v2.2
+
 import { auth, db, st, applyPrefs } from './firebase.js';
 import {
-  collection, addDoc, doc, getDoc, getDocs, setDoc,
-  query, where, orderBy, limit, serverTimestamp, deleteDoc
+  collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc,
+  query, where, orderBy, limit, serverTimestamp, deleteDoc, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
@@ -86,11 +86,14 @@ async function uploadAny(file, folder){
   await uploadBytes(r, file);
   return await getDownloadURL(r);
 }
+
+// Create or Update Post
 window.createPost = async(ev)=>{
   ev.preventDefault();
-  if(!auth.currentUser) return alert('Admin only');
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
   const title = document.getElementById('pTitle').value.trim();
   const allowHTML = document.getElementById('pAllowHTML').checked;
+  const postId = (document.getElementById('pId')?.value || '').trim();
   const blocks = [];
   for(const el of blocksHost.children){
     const type = el.getAttribute('data-type');
@@ -102,15 +105,24 @@ window.createPost = async(ev)=>{
     }
   }
   const d=new Date();
-  await addDoc(collection(db,'posts'), { title, blocks, month:d.getMonth()+1, year:d.getFullYear(), createdAt: serverTimestamp() });
-  document.getElementById('postMsg').textContent='Published';
+  if (postId) {
+    await updateDoc(doc(db,'posts', postId), { title, blocks, updatedAt: serverTimestamp() });
+    alert('✅ Post updated successfully!');
+  } else {
+    await addDoc(collection(db,'posts'), { title, blocks, month:d.getMonth()+1, year:d.getFullYear(), likes: 0, createdAt: serverTimestamp() });
+    alert('✅ Post published successfully!');
+  }
+  // reset form
   blocksHost.innerHTML=''; addBlock('text'); document.getElementById('pTitle').value='';
+  if (document.getElementById('pId')) document.getElementById('pId').value='';
+  document.getElementById('postMsg').textContent='';
   loadLatest();
 };
+
 function safeHTML(s){ return (s||'').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,''); }
 function escapeHTML(s){ return (s||'').replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;","&quot;":"&quot;"}[m])) }
 function renderBlocks(arr){
-  return arr.map(b=>{
+  return (arr||[]).map(b=>{
     if(b.type==='text') return `<div style="white-space:pre-wrap">${b.allowHTML? safeHTML(b.text): escapeHTML(b.text)}</div>`;
     if(b.type==='image') return `<img src="${b.url}" style="width:100%;border:1px solid #e5e7eb;border-radius:10px">`;
     if(b.type==='video') return `<video src="${b.url}" controls style="width:100%;border-radius:10px"></video>`;
@@ -118,12 +130,84 @@ function renderBlocks(arr){
     return '';
   }).join('');
 }
+
+// Like (love) helpers using localStorage + Firestore increment (best effort)
+function isLikedLocal(id){ return localStorage.getItem('liked_'+id)==='1'; }
+function setLikedLocal(id, v){ if(v) localStorage.setItem('liked_'+id,'1'); else localStorage.removeItem('liked_'+id); }
+
+window.toggleLike = async function(id){
+  const btn = document.querySelector(`[data-like="${id}"]`);
+  if(!btn) return;
+  const countEl = btn.querySelector('.like-count');
+  const wasLiked = isLikedLocal(id);
+  const cur = parseInt(countEl?.textContent||'0',10);
+  const next = wasLiked ? Math.max(0, cur-1) : cur+1;
+  // optimistic UI
+  btn.classList.toggle('liked', !wasLiked);
+  if(countEl) countEl.textContent = String(next);
+  setLikedLocal(id, !wasLiked);
+  try{
+    await updateDoc(doc(db,'posts', id), { likes: increment(wasLiked ? -1 : 1) });
+  }catch(e){
+    // ignore if rules block; UI will still reflect device-like
+  }
+};
+
+// Admin edit/delete
+window.editPost = async function(id){
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  const snap = await getDoc(doc(db,'posts', id));
+  if(!snap.exists()) return alert('Post not found');
+  const p = snap.data();
+  document.getElementById('pTitle').value = p.title||'';
+  const allow = !!(p.blocks||[]).find(b=>b.type==='text' && b.allowHTML===true);
+  document.getElementById('pAllowHTML').checked = allow;
+  // rebuild blocks
+  blocksHost.innerHTML='';
+  (p.blocks||[]).forEach(b=>{
+    if(b.type==='text'){
+      const wrap = document.createElement('div'); wrap.innerHTML = blockTpl('text'); const el = wrap.firstElementChild;
+      el.querySelector('[data-role="text"]').value = b.text||''; blocksHost.appendChild(el);
+    }else{
+      const hint = document.createElement('div'); hint.className='block';
+      hint.innerHTML = `<div class="note">(${b.type}) attached — re-upload to replace</div>`;
+      blocksHost.appendChild(hint);
+    }
+  });
+  document.getElementById('pId').value = id;
+  show('admin');
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+
+window.deletePost = async function(id){
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
+  if(!confirm('ဖျက်မလား?')) return;
+  await deleteDoc(doc(db,'posts', id));
+  alert('🗑 Deleted');
+  loadLatest();
+};
+
 async function loadLatest(){
   const host = document.getElementById('postGrid'); host.innerHTML='';
   try{
     const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
-    let n=0; snap.forEach(d=>{ const p=d.data(); n++; const el=document.createElement('div'); el.className='card';
-      el.innerHTML = `<h3>${escapeHTML(p.title||'Untitled')}</h3>${renderBlocks(p.blocks||[])}<div class="note mt">${p.month||'?'} / ${p.year||'?'}</div>`;
+    let n=0; snap.forEach(d=>{
+      const p=d.data(); n++; const el=document.createElement('div'); el.className='card';
+      const likes = typeof p.likes==='number' ? p.likes : 0;
+      const liked = isLikedLocal(d.id);
+      el.innerHTML = `
+        <h3>${escapeHTML(p.title||'Untitled')}</h3>
+        ${renderBlocks(p.blocks||[])}
+        <div class="row mt post-foot">
+          <span class="note">${p.month||'?'} / ${p.year||'?'}</span>
+          <div class="space"></div>
+          <button class="like-btn ${liked?'liked':''}" data-like="${d.id}" onclick="toggleLike('${d.id}')">❤ <span class="like-count">${likes}</span></button>
+          ${isAdmin ? `
+            <div class="post-actions">
+              <button class="btn small edit" onclick="editPost('${d.id}')">✏ Edit</button>
+              <button class="btn small danger" onclick="deletePost('${d.id}')">🗑 Delete</button>
+            </div>` : ''}
+        </div>`;
       host.appendChild(el);
     });
     document.getElementById('homeEmpty').style.display = n? 'none':'block';
@@ -143,7 +227,7 @@ async function loadDonation(){
   document.getElementById('ayaNote').textContent = x.ayaNote||'';
 }
 window.saveDonation = async ()=>{
-  if(!auth.currentUser) return alert('Admin only');
+  if(!auth.currentUser || !isAdmin) return alert('Admin only');
   async function up(id){ const f=document.getElementById(id).files[0]||null; if(!f) return ''; const r=sref(st,`donations/${Date.now()}-${f.name}`); await uploadBytes(r,f); return await getDownloadURL(r); }
   const kbzQR=await up('kbzQR'), cbQR=await up('cbQR'), ayaQR=await up('ayaQR');
   const kbzNote=document.getElementById('kbzNoteIn').value.trim();
@@ -161,7 +245,7 @@ const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct',
 window.prevMonth = ()=>{ cur = new Date(cur.getFullYear(), cur.getMonth()-1, 1); loadEvents(); };
 window.nextMonth = ()=>{ cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1); loadEvents(); };
 async function getDayNote(iso){ const s=await getDoc(doc(db,'eventNotes', iso)); return s.exists()? (s.data().note||'') : ''; }
-async function saveDayNote(iso, text){ if(!auth.currentUser) return alert('Admin only'); await setDoc(doc(db,'eventNotes', iso), { note:text, ts:Date.now() }); }
+async function saveDayNote(iso, text){ if(!auth.currentUser || !isAdmin) return alert('Admin only'); await setDoc(doc(db,'eventNotes', iso), { note:text, ts:Date.now() }); }
 function dayISO(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 async function renderCalendar(arr){
   const c = document.getElementById('cal'); c.innerHTML='';
@@ -204,7 +288,7 @@ function refreshRecordGate(){
   const nn = document.querySelector('.nonadmin-note'); if(nn) nn.style.display = can? 'none':'block';
 }
 window.saveRecord = async(ev)=>{
-  ev.preventDefault(); if(!auth.currentUser) return alert('Admin only');
+  ev.preventDefault(); if(!auth.currentUser || !isAdmin) return alert('Admin only');
   const y=Number(document.getElementById('rYear').value), name=document.getElementById('rName').value.trim();
   const age=Number(document.getElementById('rAge').value||0), nrc=document.getElementById('rNRC').value.trim();
   const vow=document.getElementById('rVow').value.trim();
@@ -236,8 +320,8 @@ window.searchRecords = async()=>{
     if(qtext && !hay.includes(qtext)) return;
     n++;
     const img = x.photo
-  ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
-  : `<div class="rec-photo-box empty">No Photo</div>`;
+      ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
+      : `<div class="rec-photo-box empty">No Photo</div>`;
     const item = document.createElement('div'); item.className='card';
     item.innerHTML = `${img}
       <ol style="padding-left:18px;margin:0">
@@ -255,7 +339,7 @@ window.searchRecords = async()=>{
       </ol>
       <div class="row" style="gap:8px;margin-top:10px">
         <button class="btn" onclick="editRecord('${x.id}')">Edit</button>
-        <button class="btn" onclick="deleteRecord('${x.id}')">Delete</button>
+        <button class="btn danger" onclick="deleteRecord('${x.id}')">Delete</button>
       </div>`;
     host.appendChild(item);
   });
@@ -288,6 +372,7 @@ window.deleteRecord = async(id)=>{
   await deleteDoc(doc(db,'records', id));
   await window.searchRecords();
 };
+
 // Export helpers
 async function fetchYearRecords(){ 
   const y = Number(document.getElementById('recYear').value||0);
@@ -315,8 +400,8 @@ async function fetchYearRecords(){
 function toCSV(rows){
   const head = ['ဓာတ်ပုံ(URL)','နာမည်','အသက်','ဝါတော်','မှတ်ပုံတင်','မိဘအမည်','ယခင်နေရပ်လိပ်စာ','ပညာအရည်အချင်း','လက်ရှိရာထူး','ဖုန်း','Email'];
   const body = rows.map(r=>[r.photo,r.name,r.age,r.vow,r.nrc,r.parents,r.addr,r.edu,r.role,r.phone,r.email]
-    .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
-  return [head.join(','), ...body].join('\r\n');
+    .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  return [head.join(','), body].filter(Boolean).join('\r\n');
 }
 window.exportRecordsCSV = async ()=>{
   try{
