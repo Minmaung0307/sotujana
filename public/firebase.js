@@ -4,12 +4,13 @@ import { getFirestore }   from 'https://www.gstatic.com/firebasejs/10.12.4/fireb
 import { getStorage }     from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
 
 export const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyAXLNT_QRsQhdNa4lvJDpEm2q4z8frlvIE",
+  authDomain: "sitagu-mm.firebaseapp.com",
+  projectId: "sitagu-mm",
+  storageBucket: "sitagu-mm.firebasestorage.app",
+  messagingSenderId: "984537608489",
+  appId: "1:984537608489:web:4464d2b36b55498254c738",
+  measurementId: "G-6T0MDFL7PD"
 };
 
 export const app = initializeApp(FIREBASE_CONFIG);
