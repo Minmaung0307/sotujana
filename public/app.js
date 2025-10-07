@@ -1,38 +1,44 @@
-// app.js v2.2
+// app.js v2.3 (fixed imports, syntax-safe)
+// Source based on user's last upload; cleaned for syntax + missing imports.
+
 import { auth, db, st, applyPrefs } from './firebase.js';
 import {
   collection, addDoc, doc, getDoc, getDocs, setDoc,
-  query, where, orderBy, limit, serverTimestamp, deleteDoc
+  query, where, orderBy, limit, serverTimestamp, deleteDoc,
+  updateDoc, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
 import { ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js';
 
 const $ = s => document.querySelector(s);
-document.getElementById('year').textContent = new Date().getFullYear();
+const yearEl = document.getElementById('year'); if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+// Theme / Font
 const selTheme = $('#selTheme'), selFont = $('#selFont');
-selTheme.value = localStorage.getItem('theme') || 'light';
-selFont.value  = localStorage.getItem('font')  || 'base';
-selTheme.addEventListener('change', e=>{ localStorage.setItem('theme', e.target.value); applyPrefs(); });
-selFont.addEventListener('change',  e=>{ localStorage.setItem('font',  e.target.value);  applyPrefs(); });
+if (selTheme) selTheme.value = localStorage.getItem('theme') || 'light';
+if (selFont)  selFont.value  = localStorage.getItem('font')  || 'base';
+selTheme?.addEventListener('change', e=>{ localStorage.setItem('theme', e.target.value); applyPrefs(); });
+selFont?.addEventListener('change',  e=>{ localStorage.setItem('font',  e.target.value);  applyPrefs(); });
 
+// Tabs
 window.tab = (el, id) => {
   document.querySelectorAll('#mainNav button').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const sec = document.getElementById(id);
+  if (sec) sec.classList.add('active');
   if(id==='events')  loadEvents();
   if(id==='donate')  loadDonation();
   if(id==='records') refreshRecordGate();
 };
 window.show = id => document.querySelector(`button[data-tab="${id}"]`)?.click();
 
-$('#btnTopSignOut').addEventListener('click', ()=> logout());
+document.getElementById('btnTopSignOut')?.addEventListener('click', ()=> logout());
 
 // Modal login
 const modal = document.getElementById('loginModal');
-window.openLogin  = ()=> { modal.classList.add('show'); document.getElementById('mEmail')?.focus(); };
-window.closeLogin = ()=> modal.classList.remove('show');
+window.openLogin  = ()=> { modal?.classList.add('show'); document.getElementById('mEmail')?.focus(); };
+window.closeLogin = ()=> modal?.classList.remove('show');
 window.loginModal = async ()=>{
   try{
     const email = (document.getElementById('mEmail')?.value||'').trim();
@@ -49,21 +55,29 @@ async function checkAdmin(u){
   return snap.exists();
 }
 async function updateAuthUI(u){
-  const pill = document.getElementById('authState'); const btnAdminTab = document.getElementById('btnTabAdmin'); const adminSec = document.getElementById('admin');
+  const pill = document.getElementById('authState');
+  const btnAdminTab = document.getElementById('btnTabAdmin');
+  const adminSec = document.getElementById('admin');
   isAdmin = await checkAdmin(u);
   if(u){
-    pill.textContent = isAdmin ? 'Admin' : 'User';
-    document.getElementById('btnTopSignIn').style.display='none'; document.getElementById('btnTopSignOut').style.display='inline-flex';
-    btnAdminTab.style.display = isAdmin ? 'inline-flex' : 'none';
-    adminSec.style.display = isAdmin ? 'block' : 'none';
+    if (pill) pill.textContent = isAdmin ? 'Admin' : 'User';
+    const inBtn = document.getElementById('btnTopSignIn');
+    const outBtn = document.getElementById('btnTopSignOut');
+    if (inBtn) inBtn.style.display='none';
+    if (outBtn) outBtn.style.display='inline-flex';
+    if (btnAdminTab) btnAdminTab.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (adminSec) adminSec.style.display = isAdmin ? 'block' : 'none';
   }else{
-    pill.textContent = 'Guest';
-    document.getElementById('btnTopSignIn').style.display='inline-flex'; document.getElementById('btnTopSignOut').style.display='none';
-    btnAdminTab.style.display='none'; adminSec.style.display='none';
+    if (pill) pill.textContent = 'Guest';
+    const inBtn = document.getElementById('btnTopSignIn');
+    const outBtn = document.getElementById('btnTopSignOut');
+    if (inBtn) inBtn.style.display='inline-flex';
+    if (outBtn) outBtn.style.display='none';
+    if (btnAdminTab) btnAdminTab.style.display='none';
+    if (adminSec) adminSec.style.display='none';
   }
   refreshRecordGate();
 }
-// onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
 onAuthStateChanged(auth, function(u){
   updateAuthUI(u).then(function(){
     loadLatest(); // login/logout အတိုင်း posts UI ပြန်ဖော်ပြ
@@ -82,8 +96,12 @@ function blockTpl(type){
   const accept = type==='image' ? 'image/*' : type==='video' ? 'video/*' : 'audio/*';
   return `<div class="block" data-type="${type}"><input type="file" accept="${accept}" data-role="file"/></div>`;
 }
-window.addBlock = (type)=>{ const wrap=document.createElement('div'); wrap.innerHTML=blockTpl(type); blocksHost.appendChild(wrap.firstElementChild); };
-addBlock('text');
+window.addBlock = (type)=>{
+  const wrap=document.createElement('div'); wrap.innerHTML=blockTpl(type);
+  blocksHost?.appendChild(wrap.firstElementChild);
+};
+// initial one text block
+if (blocksHost && !blocksHost.children.length) { window.addBlock('text'); }
 
 async function uploadAny(file, folder){
   if(!file) return '';
@@ -95,23 +113,25 @@ async function uploadAny(file, folder){
 window.createPost = async(ev)=>{
   ev.preventDefault();
   if(!auth.currentUser || !isAdmin) return alert('Admin only');
-  const title = document.getElementById('pTitle').value.trim();
+  const title = (document.getElementById('pTitle')?.value || '').trim();
   const allowHTML = document.getElementById('pAllowHTML')?.checked || false;
   const postId = (document.getElementById('pId')?.value || '').trim();
   const blocks = [];
   const container = document.getElementById('blocks');
-  for(const el of container.children){
-    const type = el.getAttribute('data-type');
-    if(type==='text'){
-      const txt = el.querySelector('[data-role="text"]')?.value || '';
-      blocks.push({ type:'text', text: txt, allowHTML });
-    }else{
-      const remove = el.querySelector('[data-role="remove"]')?.checked || false;
-      if(remove) continue;
-      const file = el.querySelector('[data-role="file"]')?.files?.[0] || null;
-      let url = el.getAttribute('data-existing-url') || '';
-      if(file){ url = await uploadAny(file, 'posts'); }
-      if(url) blocks.push({ type, url });
+  if (container) {
+    for(const el of container.children){
+      const type = el.getAttribute('data-type');
+      if(type==='text'){
+        const txt = el.querySelector('[data-role="text"]')?.value || '';
+        blocks.push({ type:'text', text: txt, allowHTML });
+      }else{
+        const remove = el.querySelector('[data-role="remove"]')?.checked || false;
+        if(remove) continue;
+        const file = el.querySelector('[data-role="file"]')?.files?.[0] || null;
+        let url = el.getAttribute('data-existing-url') || '';
+        if(file){ url = await uploadAny(file, 'posts'); }
+        if(url) blocks.push({ type, url });
+      }
     }
   }
   const d=new Date();
@@ -124,9 +144,9 @@ window.createPost = async(ev)=>{
   }
   // reset form
   const host = document.getElementById('blocks'); if(host){ host.innerHTML=''; host.insertAdjacentHTML('beforeend', `<div class="block" data-type="text"><textarea placeholder="Text or HTML..." data-role="text"></textarea></div>`); }
-  document.getElementById('pTitle').value='';
+  const titleEl = document.getElementById('pTitle'); if (titleEl) titleEl.value='';
   const idEl = document.getElementById('pId'); if(idEl) idEl.value='';
-  document.getElementById('postMsg')?.textContent='';
+  const msg = document.getElementById('postMsg'); if (msg) msg.textContent='';
   loadLatest();
 };
 
@@ -184,10 +204,9 @@ window.toggleLike = async function(id){
   setLikedLocal(id, !wasLiked);
   setLastCount(id, next);
 
-  // server increment (rules မဖြစ်သေးရင် fail silently)
   try{
     await updateDoc(doc(db,'posts', id), { likes: increment(wasLiked ? -1 : 1) });
-  }catch(e){}
+  }catch(e){ /* ignore */ }
 };
 
 // ---------- Load latest posts (1 block per post + admin buttons) ----------
@@ -199,17 +218,17 @@ async function loadLatest(){
   try{
     const q = query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24));
     const snap = await getDocs(q);
-    var n = 0;
+    let n = 0;
 
     snap.forEach(function(d){
-      var p = d.data(); n++;
+      const p = d.data(); n++;
 
-      var likesServer = (typeof p.likes==='number') ? p.likes : 0;
-      var liked = isLikedLocal(d.id);
-      var shadow = getLastCount(d.id);
-      var likesToShow = (liked && shadow!=null && shadow>likesServer) ? shadow : likesServer;
+      const likesServer = (typeof p.likes==='number') ? p.likes : 0;
+      const liked = isLikedLocal(d.id);
+      const shadow = getLastCount(d.id);
+      const likesToShow = (liked && shadow!=null && shadow>likesServer) ? shadow : likesServer;
 
-      var el = document.createElement('div');
+      const el = document.createElement('div');
       el.className = 'card';
       el.innerHTML =
         '<h3>'+ escapeHTML(p.title||'Untitled') +'</h3>' +
@@ -231,7 +250,7 @@ async function loadLatest(){
       host.appendChild(el);
     });
 
-    var empty = document.getElementById('homeEmpty');
+    const empty = document.getElementById('homeEmpty');
     if(empty){ empty.style.display = n ? 'none' : 'block'; }
 
   }catch(e){
@@ -244,20 +263,28 @@ loadLatest();
 async function loadDonation(){
   const cfg = await getDoc(doc(db,'meta','donation'));
   const x = cfg.exists()? cfg.data(): {};
-  document.getElementById('qrKBZ').src = x.kbzQR||'';
-  document.getElementById('qrCB').src  = x.cbQR||'';
-  document.getElementById('qrAYA').src = x.ayaQR||'';
-  document.getElementById('kbzNote').textContent = x.kbzNote||'';
-  document.getElementById('cbNote').textContent  = x.cbNote||'';
-  document.getElementById('ayaNote').textContent = x.ayaNote||'';
+  const elKBZ = document.getElementById('qrKBZ');
+  const elCB  = document.getElementById('qrCB');
+  const elAYA = document.getElementById('qrAYA');
+  if (elKBZ) elKBZ.src = x.kbzQR||'';
+  if (elCB)  elCB.src  = x.cbQR||'';
+  if (elAYA) elAYA.src = x.ayaQR||'';
+  const kbzNote = document.getElementById('kbzNote'); if (kbzNote) kbzNote.textContent = x.kbzNote||'';
+  const cbNote  = document.getElementById('cbNote');  if (cbNote)  cbNote.textContent  = x.cbNote||'';
+  const ayaNote = document.getElementById('ayaNote'); if (ayaNote) ayaNote.textContent = x.ayaNote||'';
 }
 window.saveDonation = async ()=>{
   if(!auth.currentUser) return alert('Admin only');
-  async function up(id){ const f=document.getElementById(id).files[0]||null; if(!f) return ''; const r=sref(st,`donations/${Date.now()}-${f.name}`); await uploadBytes(r,f); return await getDownloadURL(r); }
+  async function up(id){
+    const f=(document.getElementById(id)?.files||[])[0]||null;
+    if(!f) return '';
+    const r=sref(st,`donations/${Date.now()}-${f.name}`);
+    await uploadBytes(r,f); return await getDownloadURL(r);
+  }
   const kbzQR=await up('kbzQR'), cbQR=await up('cbQR'), ayaQR=await up('ayaQR');
-  const kbzNote=document.getElementById('kbzNoteIn').value.trim();
-  const cbNote =document.getElementById('cbNoteIn').value.trim();
-  const ayaNote=document.getElementById('ayaNoteIn').value.trim();
+  const kbzNote=(document.getElementById('kbzNoteIn')?.value||'').trim();
+  const cbNote =(document.getElementById('cbNoteIn')?.value||'').trim();
+  const ayaNote=(document.getElementById('ayaNoteIn')?.value||'').trim();
   const cur=await getDoc(doc(db,'meta','donation')); const prev=cur.exists()? cur.data(): {};
   await setDoc(doc(db,'meta','donation'), { kbzQR:kbzQR||prev.kbzQR||'', cbQR:cbQR||prev.cbQR||'', ayaQR:ayaQR||prev.ayaQR||'', kbzNote, cbNote, ayaNote });
   alert('Saved'); loadDonation();
@@ -273,9 +300,9 @@ async function getDayNote(iso){ const s=await getDoc(doc(db,'eventNotes', iso));
 async function saveDayNote(iso, text){ if(!auth.currentUser) return alert('Admin only'); await setDoc(doc(db,'eventNotes', iso), { note:text, ts:Date.now() }); }
 function dayISO(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 async function renderCalendar(arr){
-  const c = document.getElementById('cal'); c.innerHTML='';
+  const c = document.getElementById('cal'); if(!c) return; c.innerHTML='';
   const y = cur.getFullYear(); const m = cur.getMonth();
-  document.getElementById('monthLabel').textContent = `${monthNames[m]} ${y}`;
+  const monthLabel = document.getElementById('monthLabel'); if (monthLabel) monthLabel.textContent = `${monthNames[m]} ${y}`;
   const first = new Date(y,m,1); const start = first.getDay();
   const days = new Date(y,m+1,0).getDate();
   for(let i=0;i<start;i++){ c.appendChild(document.createElement('div')); }
@@ -298,8 +325,13 @@ async function loadEvents(){
   const snap = await getDocs(collection(db,'events')); const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
   const today = new Date().toISOString().slice(0,10);
   const upcoming = arr.filter(x=>x.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
-  const host = document.getElementById('eventUpcoming'); host.innerHTML=''; if(!upcoming.length) host.innerHTML='<div class="empty">No upcoming events</div>';
-  upcoming.forEach(x=>{ const el=document.createElement('div'); el.className='card'; el.innerHTML=`<div class="row"><strong>${x.title}</strong><div class="space"></div><span class="pill">${x.date}</span></div>${x.desc? `<div class="note mt">${x.desc}</div>`:''}`; host.appendChild(el); });
+  const host = document.getElementById('eventUpcoming'); if(!host) return;
+  host.innerHTML=''; if(!upcoming.length) host.innerHTML='<div class="empty">No upcoming events</div>';
+  upcoming.forEach(x=>{
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML=`<div class="row"><strong>${x.title}</strong><div class="space"></div><span class="pill">${x.date}</span></div>${x.desc? `<div class="note mt">${x.desc}</div>`:''}`;
+    host.appendChild(el);
+  });
   await renderCalendar(arr);
 }
 loadEvents();
@@ -308,14 +340,14 @@ loadEvents();
 let editingId = null;
 function refreshRecordGate(){
   const can = !!auth.currentUser && isAdmin;
-  document.querySelector('#records .wrap').style.opacity = can? '1':'0.7';
-  document.getElementById('recEmpty').textContent = can? 'Year ထည့်ပြီး Search' : 'Admin အတွက်သာ…';
+  const wrap = document.querySelector('#records .wrap'); if (wrap) wrap.style.opacity = can? '1':'0.7';
+  const msg = document.getElementById('recEmpty'); if (msg) msg.textContent = can? 'Year ထည့်ပြီး Search' : 'Admin အတွက်သာ…';
   const nn = document.querySelector('.nonadmin-note'); if(nn) nn.style.display = can? 'none':'block';
 }
-// put this whole function (replace your current one)
+
 window.saveRecord = async function (ev) {
   ev.preventDefault();
-  if (!auth.currentUser) {
+  if (!auth.currentUser || !isAdmin) {
     alert('Admin only');
     return;
   }
@@ -381,16 +413,10 @@ window.saveRecord = async function (ev) {
   const msgEl = document.getElementById('recMsg');
   if (msgEl) {
     msgEl.textContent = 'Saved';
-    setTimeout(() => {
-      msgEl.textContent = '';
-    }, 1500);
+    setTimeout(() => { msgEl.textContent = ''; }, 1500);
   }
 
-  try {
-    await window.searchRecords();
-  } catch (e) {
-    console.warn('searchRecords error', e);
-  }
+  try { await window.searchRecords(); } catch (e) { console.warn('searchRecords error', e); }
 };
 
 window.searchRecords = async()=>{
@@ -398,7 +424,7 @@ window.searchRecords = async()=>{
   const y = Number(document.getElementById('recYear').value||0);
   const qtext = (document.getElementById('recQuery').value||'').toLowerCase().trim();
   if(!y) return alert('Enter year');
-  const host = document.getElementById('recGrid'); host.innerHTML='';
+  const host = document.getElementById('recGrid'); if(!host) return; host.innerHTML='';
   const snap = await getDocs(query(collection(db,'records'), where('y','==',y)));
   let n=0; snap.forEach(d=>{
     const x = { id: d.id, ...d.data() };
@@ -406,8 +432,8 @@ window.searchRecords = async()=>{
     if(qtext && !hay.includes(qtext)) return;
     n++;
     const img = x.photo
-  ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
-  : `<div class="rec-photo-box empty">No Photo</div>`;
+      ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
+      : `<div class="rec-photo-box empty">No Photo</div>`;
     const item = document.createElement('div'); item.className='card';
     item.innerHTML = `${img}
       <ol style="padding-left:18px;margin:0">
@@ -429,7 +455,7 @@ window.searchRecords = async()=>{
       </div>`;
     host.appendChild(item);
   });
-  document.getElementById('recEmpty').style.display = n? 'none':'block';
+  const empty = document.getElementById('recEmpty'); if (empty) empty.style.display = n? 'none':'block';
 };
 window.editRecord = async(id)=>{
   if(!auth.currentUser || !isAdmin) return alert('Admin only');
@@ -458,6 +484,7 @@ window.deleteRecord = async(id)=>{
   await deleteDoc(doc(db,'records', id));
   await window.searchRecords();
 };
+
 // Export helpers
 async function fetchYearRecords(){ 
   const y = Number(document.getElementById('recYear').value||0);
@@ -547,42 +574,44 @@ window.editPost = async function(id){
   const snap = await getDoc(doc(db,'posts', id));
   if(!snap.exists()) return alert('Post not found');
   const p = snap.data();
-  document.getElementById('pTitle').value = p.title||'';
+  const titleEl = document.getElementById('pTitle'); if (titleEl) titleEl.value = p.title||'';
   const allow = !!(p.blocks||[]).find(b=>b.type==='text' && b.allowHTML===true);
   const allowEl = document.getElementById('pAllowHTML'); if(allowEl) allowEl.checked = allow;
   const host = document.getElementById('blocks');
-  host.innerHTML='';
-  (p.blocks||[]).forEach(b=>{
-    if(b.type==='text'){
-      const wrap = document.createElement('div');
-      wrap.innerHTML = `<div class="block" data-type="text">
-          <textarea placeholder="Text or HTML..." data-role="text"></textarea>
-        </div>`;
-      const el = wrap.firstElementChild;
-      el.querySelector('[data-role="text"]').value = b.text||'';
-      host.appendChild(el);
-    }else{
-      const preview = b.type==='image' ? `<img src="${b.url}" class="prev">` :
-                     b.type==='video' ? `<video src="${b.url}" class="prev" controls></video>` :
-                     `<audio src="${b.url}" class="prev" controls></audio>`;
-      const accept = b.type==='image' ? 'image/*' : b.type==='video' ? 'video/*' : 'audio/*';
-      const wrap = document.createElement('div');
-      wrap.innerHTML = `<div class="block" data-type="${b.type}" data-existing-url="${b.url}">
-          <div class="post-media">${preview}</div>
-          <div class="media-input">
-            <label class="file small">
-              <span>Replace ${b.type.toUpperCase()}</span>
-              <input type="file" accept="${accept}" data-role="file"/>
-            </label>
-            <label class="switch">
-              <input type="checkbox" data-role="remove">
-              <span>Remove this ${b.type}</span>
-            </label>
-          </div>
-        </div>`;
-      host.appendChild(wrap.firstElementChild);
-    }
-  });
+  if (host) {
+    host.innerHTML='';
+    (p.blocks||[]).forEach(b=>{
+      if(b.type==='text'){
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<div class="block" data-type="text">
+            <textarea placeholder="Text or HTML..." data-role="text"></textarea>
+          </div>`;
+        const el = wrap.firstElementChild;
+        el.querySelector('[data-role="text"]').value = b.text||'';
+        host.appendChild(el);
+      }else{
+        const preview = b.type==='image' ? `<img src="${b.url}" class="prev">` :
+                       b.type==='video' ? `<video src="${b.url}" class="prev" controls></video>` :
+                       `<audio src="${b.url}" class="prev" controls></audio>`;
+        const accept = b.type==='image' ? 'image/*' : b.type==='video' ? 'video/*' : 'audio/*';
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<div class="block" data-type="${b.type}" data-existing-url="${b.url}">
+            <div class="post-media">${preview}</div>
+            <div class="media-input">
+              <label class="file small">
+                <span>Replace ${b.type.toUpperCase()}</span>
+                <input type="file" accept="${accept}" data-role="file"/>
+              </label>
+              <label class="switch">
+                <input type="checkbox" data-role="remove">
+                <span>Remove this ${b.type}</span>
+              </label>
+            </div>
+          </div>`;
+        host.appendChild(wrap.firstElementChild);
+      }
+    });
+  }
   const idEl = document.getElementById('pId'); if(idEl) idEl.value = id;
   show('admin'); window.scrollTo({top:0, behavior:'smooth'});
 };
