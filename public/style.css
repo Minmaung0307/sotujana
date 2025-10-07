@@ -124,3 +124,58 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
 .like-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06); }
 .like-btn.liked{ background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
 .like-count{ min-width:1.5ch; text-align:right; }
+
+/* ===== Footer ===== */
+.site-footer{
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding: 20px 16px 10px;
+}
+
+.footer-grid{
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 900px){
+  .footer-grid{ grid-template-columns: 1fr; }
+}
+
+.footer-brand{
+  display: flex; gap: 10px; align-items: center;
+}
+.footer-brand .logo{
+  width: 40px; height: 40px; display:grid; place-items:center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #001223; font-weight: 900;
+}
+.footer-links{
+  display: flex; flex-wrap: wrap; gap: 10px 14px;
+}
+.f-link{
+  padding: 8px 10px; border-radius: 10px;
+  background: var(--chip); color: var(--text);
+  border: 1px solid var(--border); text-decoration: none;
+}
+.f-link:hover{ outline: 2px solid var(--accent); }
+
+.footer-social{
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.s-btn{
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 999px;
+  background: var(--chip); color: var(--text);
+  border: 1px solid var(--border); text-decoration: none;
+}
+.s-btn:hover{ outline: 2px solid var(--accent); }
+.s-btn svg{ width: 18px; height: 18px; fill: currentColor; }
+
+.footer-bottom{
+  display:flex; justify-content:center; margin-top: 14px;
+  padding-top: 10px; border-top: 1px dashed var(--border);
+  color: var(--muted);
+}
