@@ -179,3 +179,37 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
   padding-top: 10px; border-top: 1px dashed var(--border);
   color: var(--muted);
 }
+
+/* --- Post Read-more clip --- */
+.post-card .body {
+  line-height: 1.7;
+}
+.post-card .body.clip {
+  max-height: 320px;               /* ကိုယ်စိတ်ကြိုက် ပြင်နိုင် */
+  overflow: hidden;
+  position: relative;
+}
+.post-card .body.clip::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), var(--card));
+}
+.light .post-card .body.clip::after{
+  background: linear-gradient(to bottom, rgba(255,255,255,0), var(--card));
+}
+.read-more {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--chip);
+  cursor: pointer;
+}
+
+/* --- Pager --- */
+.pager{
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 16px 0; margin-top: 8px;
+}
+.pager .btn[disabled]{ opacity: .5; cursor: not-allowed; }

@@ -137,6 +137,14 @@ window.logout = async () => {
   }
 };
 
+// ===== Pagination state =====
+const PAGE_SIZE = 10;
+let pageIndex = 0;
+// cursors[i] ကို "page i" အတွက် startAfter() cursor အဖြစ်သုံးမယ်
+// cursors[0] = null (ပထမနေရာ), cursors[i] = lastDoc of page i
+const cursors = [null]; // first page cursor is null
+let haveNext = true;     // next ရှိ/မရှိ ပြသဖို့
+
 // Posts
 const blocksHost = document.getElementById("blocks");
 function blockTpl(type) {
@@ -430,6 +438,30 @@ function renderBlocks(arr) {
     .join("");
 }
 
+function needsClip(html, threshold = 450){
+  const text = html.replace(/<[^>]+>/g,''); // rough text length
+  return text.length > threshold;
+}
+function makeClippedBody(html){
+  // wrap with body div + add Read more button (toggle clip)
+  const wrap = document.createElement('div');
+  wrap.className = 'body clip';
+  wrap.innerHTML = html;
+
+  const btn = document.createElement('button');
+  btn.className = 'read-more';
+  btn.textContent = 'Read more >>>';
+  btn.addEventListener('click', ()=>{
+    wrap.classList.remove('clip');
+    btn.remove();
+  });
+
+  const container = document.createElement('div');
+  container.appendChild(wrap);
+  container.appendChild(btn);
+  return container;
+}
+
 // ---------- Like toggle ----------
 window.toggleLike = async function (id) {
   const btn = document.querySelector('[data-like="' + id + '"]');
@@ -458,80 +490,133 @@ window.toggleLike = async function (id) {
 };
 
 // ---------- Load latest posts (1 block per post + admin buttons) ----------
-async function loadLatest() {
-  const host = document.getElementById("postGrid");
-  if (!host) return;
-  host.innerHTML = "";
+// Render a page of posts
+async function loadPostsPage(whichPage = 0){
+  const host = document.getElementById('postGrid');
+  host.innerHTML = '';
 
-  try {
-    const q = query(
-      collection(db, "posts"),
-      orderBy("createdAt", "desc"),
-      limit(24)
+  // query with cursor
+  let qref = query(
+    collection(db, 'posts'),
+    orderBy('createdAt','desc'),
+    limit(PAGE_SIZE)
+  );
+  if (whichPage > 0 && cursors[whichPage]) {
+    qref = query(
+      collection(db, 'posts'),
+      orderBy('createdAt','desc'),
+      startAfter(cursors[whichPage]),
+      limit(PAGE_SIZE)
     );
-    const snap = await getDocs(q);
-    let n = 0;
+  } else if (whichPage > 0 && !cursors[whichPage]) {
+    // မရှိရင် အရင်ဆုံး known last cursor ကိုသုံးပြီး တဖြည်းဖြည်း next next တက်ပေးမယ်
+    // but အောက်က next/prev ခလုတ်နဲ့သာ သွားရင် ဒီခွဲမဖြစ်သင့်
+  }
 
-    snap.forEach(function (d) {
+  try{
+    const snap = await getDocs(qref);
+    const docs = snap.docs;
+
+    // next page cursor စီမံ — အခုပြီးရင် next အတွက် lastDoc ကို သိမ်း
+    haveNext = (docs.length === PAGE_SIZE);
+    cursors[whichPage + 1] = docs.length ? docs[docs.length - 1] : cursors[whichPage + 1];
+
+    // UI pager buttons
+    pageIndex = whichPage;
+    updatePager();
+
+    // render each post
+    docs.forEach(d=>{
       const p = d.data();
-      n++;
+      const el = document.createElement('div');
+      el.className = 'card post-card';
 
-      const likesServer = typeof p.likes === "number" ? p.likes : 0;
-      const liked = isLikedLocal(d.id);
-      const shadow = getLastCount(d.id);
-      const likesToShow =
-        liked && shadow != null && shadow > likesServer ? shadow : likesServer;
+      // Title
+      const title = escapeHTML(p.title || 'Untitled');
 
-      const el = document.createElement("div");
-      el.className = "card";
-      el.innerHTML =
-        "<h3>" +
-        escapeHTML(p.title || "Untitled") +
-        "</h3>" +
-        renderBlocks(p.blocks || []) +
-        '<div class="row mt post-foot">' +
-        '<span class="note">' +
-        (p.month || "?") +
-        " / " +
-        (p.year || "?") +
-        "</span>" +
-        '<div class="space"></div>' +
-        '<button class="like-btn ' +
-        (liked ? "liked" : "") +
-        '" data-like="' +
-        d.id +
-        '" onclick="toggleLike(\'' +
-        d.id +
-        "')\">❤ " +
-        '<span class="like-count">' +
-        likesToShow +
-        "</span>" +
-        "</button>" +
-        (isAdmin
-          ? '<div class="post-actions">' +
-            '<button class="btn small edit" onclick="editPost(\'' +
-            d.id +
-            "')\">✏ Edit</button>" +
-            '<button class="btn small danger" onclick="deletePost(\'' +
-            d.id +
-            "')\">🗑 Delete</button>" +
-            "</div>"
-          : "") +
-        "</div>";
+      // Body HTML (from your renderer; fallback to p.body)
+      let bodyHTML = '';
+      if (typeof renderBlocks === 'function') {
+        bodyHTML = renderBlocks(p.blocks || []);
+      } else {
+        bodyHTML = (p.body || '');
+      }
+
+      // Month/Year note
+      const meta = `<div class="note">${p.month || '?'} / ${p.year || '?'}</div>`;
+
+      // Like button (existing)
+      const likes = typeof p.likes==='number' ? p.likes : 0;
+      const liked = isLikedLocal ? isLikedLocal(d.id) : false;
+      const likeBtn = `<button class="like-btn ${liked?'liked':''}" data-like="${d.id}" onclick="toggleLike('${d.id}')">❤ <span class="like-count">${likes}</span></button>`;
+
+      // Admin edit/delete (existing isAdmin flag)
+      const adminBtns = (typeof isAdmin!=='undefined' && isAdmin) ? `
+        <div class="post-actions">
+          <button class="btn small edit" onclick="editPost('${d.id}')">✏ Edit</button>
+          <button class="btn small danger" onclick="deletePost('${d.id}')">🗑 Delete</button>
+        </div>
+      ` : '';
+
+      // Build card inner
+      const head = `<h3>${title}</h3>`;
+      const foot = `
+        <div class="row mt post-foot">
+          ${meta}
+          <div class="space"></div>
+          ${likeBtn}
+          ${adminBtns}
+        </div>`;
+
+      // Insert content (with read-more if long)
+      el.innerHTML = head; // first Title only
+      const contentHost = document.createElement('div'); // body holder
+      if (needsClip(bodyHTML)) {
+        const clipped = makeClippedBody(bodyHTML);
+        el.appendChild(clipped);
+      } else {
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'body';
+        bodyDiv.innerHTML = bodyHTML;
+        el.appendChild(bodyDiv);
+      }
+      // Footer
+      const footWrap = document.createElement('div');
+      footWrap.innerHTML = foot;
+      el.appendChild(footWrap);
 
       host.appendChild(el);
     });
 
-    const empty = document.getElementById("homeEmpty");
-    if (empty) {
-      empty.style.display = n ? "none" : "block";
+    if (!docs.length){
+      host.innerHTML = `<div class="empty">This page is empty.</div>`;
     }
-  } catch (e) {
-    host.innerHTML =
-      '<div class="empty">Posts မဖတ်နိုင်ပါ — ' + e.message + "</div>";
+  }catch(e){
+    host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`;
   }
 }
-loadLatest();
+// loadPostsPage();
+
+function updatePager(){
+  const info = document.getElementById('pageInfo');
+  const prevBtn = document.getElementById('btnPrev');
+  const nextBtn = document.getElementById('btnNext');
+  info.textContent = `Page ${pageIndex + 1}`;
+  prevBtn.disabled = (pageIndex === 0);
+  nextBtn.disabled = !haveNext; // last page ဟုတ်ရင် disable
+}
+
+document.getElementById('btnPrev').addEventListener('click', ()=>{
+  if(pageIndex === 0) return;
+  loadPostsPage(pageIndex - 1);
+});
+document.getElementById('btnNext').addEventListener('click', ()=>{
+  if(!haveNext) return;
+  loadPostsPage(pageIndex + 1);
+});
+
+// Initial
+loadPostsPage(0);
 
 // Donations
 async function loadDonation() {
