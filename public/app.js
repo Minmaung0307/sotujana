@@ -63,7 +63,14 @@ async function updateAuthUI(u){
   }
   refreshRecordGate();
 }
-onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
+// onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
+onAuthStateChanged(auth, (u)=> {
+  updateAuthUI(u);
+  if (u) {
+    // isAdmin ကို updateAuthUI/checkAdmin ထဲမှာ ပြောင်းပြီးသွားမယ်
+    loadLatest(); // admin buttons ကို ပြန်အဖြည့် render
+  }
+});
 
 window.logout = async ()=>{
   try{ await signOut(auth); alert('Signed out'); location.reload(); }
@@ -131,10 +138,18 @@ function renderBlocks(arr){
   }).join('');
 }
 
-// Like (love) helpers using localStorage + Firestore increment (best effort)
+// --- Like helpers (မရှိသေးရင် ထည့်ပါ) ---
 function isLikedLocal(id){ return localStorage.getItem('liked_'+id)==='1'; }
 function setLikedLocal(id, v){ if(v) localStorage.setItem('liked_'+id,'1'); else localStorage.removeItem('liked_'+id); }
+function getLastCount(id){
+  const n = Number(localStorage.getItem('likes_last_'+id));
+  return Number.isFinite(n) ? n : null;
+}
+function setLastCount(id, n){
+  localStorage.setItem('likes_last_'+id, String(n));
+}
 
+// toggleLike (မရှိသေးရင် ထည့်ပါ)
 window.toggleLike = async function(id){
   const btn = document.querySelector(`[data-like="${id}"]`);
   if(!btn) return;
@@ -142,15 +157,17 @@ window.toggleLike = async function(id){
   const wasLiked = isLikedLocal(id);
   const cur = parseInt(countEl?.textContent||'0',10);
   const next = wasLiked ? Math.max(0, cur-1) : cur+1;
+
   // optimistic UI
   btn.classList.toggle('liked', !wasLiked);
   if(countEl) countEl.textContent = String(next);
   setLikedLocal(id, !wasLiked);
+  setLastCount(id, next);
+
+  // server-side increment (rules မဖြစ်သေးရင် error ကို လျစ်လျူရှု)
   try{
     await updateDoc(doc(db,'posts', id), { likes: increment(wasLiked ? -1 : 1) });
-  }catch(e){
-    // ignore if rules block; UI will still reflect device-like
-  }
+  }catch(e){}
 };
 
 // Admin edit/delete
@@ -188,30 +205,53 @@ window.deletePost = async function(id){
 };
 
 async function loadLatest(){
-  const host = document.getElementById('postGrid'); host.innerHTML='';
-  try{
-    const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
-    let n=0; snap.forEach(d=>{
-      const p=d.data(); n++; const el=document.createElement('div'); el.className='card';
-      const likes = typeof p.likes==='number' ? p.likes : 0;
+  const host = document.getElementById('postGrid');
+  host.innerHTML = '';
+
+  try {
+    const snap = await getDocs(
+      query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24))
+    );
+
+    let n = 0;
+    snap.forEach(d => {
+      const p = d.data(); n++;
+
+      // server likes + local shadow likes ကို ယှဉ်ပြီး ပြမဲ
+      const likesServer = (typeof p.likes === 'number') ? p.likes : 0;
       const liked = isLikedLocal(d.id);
+      const shadow = getLastCount(d.id);
+      const likesToShow = (liked && shadow != null && shadow > likesServer) ? shadow : likesServer;
+
+      const el = document.createElement('div');
+      el.className = 'card'; // block UI (1-row per post) — CSS ထဲမှာ card ကို block အဖြစ်ပြထားမယ်
       el.innerHTML = `
-        <h3>${escapeHTML(p.title||'Untitled')}</h3>
-        ${renderBlocks(p.blocks||[])}
+        <h3>${escapeHTML(p.title || 'Untitled')}</h3>
+        ${renderBlocks(p.blocks || [])}
+
         <div class="row mt post-foot">
-          <span class="note">${p.month||'?'} / ${p.year||'?'}</span>
+          <span class="note">${p.month || '?'} / ${p.year || '?'}</span>
           <div class="space"></div>
-          <button class="like-btn ${liked?'liked':''}" data-like="${d.id}" onclick="toggleLike('${d.id}')">❤ <span class="like-count">${likes}</span></button>
+
+          <button class="like-btn ${liked ? 'liked' : ''}" data-like="${d.id}"
+                  onclick="toggleLike('${d.id}')">
+            ❤ <span class="like-count">${likesToShow}</span>
+          </button>
+
           ${isAdmin ? `
             <div class="post-actions">
               <button class="btn small edit" onclick="editPost('${d.id}')">✏ Edit</button>
               <button class="btn small danger" onclick="deletePost('${d.id}')">🗑 Delete</button>
             </div>` : ''}
-        </div>`;
+        </div>
+      `;
       host.appendChild(el);
     });
-    document.getElementById('homeEmpty').style.display = n? 'none':'block';
-  }catch(e){ host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`; }
+
+    document.getElementById('homeEmpty').style.display = n ? 'none' : 'block';
+  } catch (e) {
+    host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`;
+  }
 }
 loadLatest();
 
