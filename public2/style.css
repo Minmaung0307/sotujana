@@ -99,29 +99,85 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
 }
 
 /* --- Admin Donations polished --- */
-.donate-admin{ background: linear-gradient(135deg, rgba(34,211,238,.06), rgba(2,132,199,.03)); }
-.donate-admin .donate-grid{
-  display:grid; gap:12px; grid-template-columns: 1fr;
-  margin-top: 12px;
-}
-.donate-admin .group .lbl{
-  display:block; font-size:.9rem; color:var(--muted); margin-bottom:6px;
-}
-.donate-admin input{
-  width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:#fff;
-}
-.donate-admin .qrfile{
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-  border:1px dashed var(--line); background:#fff; border-radius:12px; padding:10px 12px;
-}
-.donate-admin .qrfile input{ width:auto }
-@media (min-width: 640px){
-  .donate-admin .donate-grid{ grid-template-columns: repeat(3, 1fr); }
+/* --- Donations admin form polished --- */
+.donate-admin {
+  background: linear-gradient(135deg, rgba(34,211,238,0.06), rgba(2,132,199,0.03));
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.06);
 }
 
-.group {
-  margin: 7px 0;
+.donate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: start;
 }
-.group input {
-  padding-left: 7px;
+
+.donate-admin .group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.donate-admin .lbl {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #475569;
+  letter-spacing: 0.2px;
+}
+
+.donate-admin input[type="text"],
+.donate-admin input[type="file"],
+.donate-admin input:not([type]),
+.donate-admin input[type="email"],
+.donate-admin input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.donate-admin input:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+}
+
+/* --- QR Upload Boxes --- */
+.qrfile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.qrfile:hover {
+  background: #f0f9ff;
+  border-color: #38bdf8;
+}
+
+.qrfile span {
+  font-size: 0.95rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.qrfile input {
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .donate-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
