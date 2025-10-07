@@ -118,3 +118,10 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
 @media (min-width: 640px){
   .donate-admin .donate-grid{ grid-template-columns: repeat(3, 1fr); }
 }
+
+.group {
+  margin: 7px 0;
+}
+.group input {
+  padding-left: 7px;
+}
