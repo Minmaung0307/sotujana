@@ -150,41 +150,37 @@
   <div class="row" style="align-items:center; gap:10px">
     <h3 style="margin:0">Donations (KBZPay • CBPay • AYAPay)</h3>
     <div class="space"></div>
-    <button class="btn" onclick="saveDonation()">Save</button>
-  </div>
-
-  <!-- Notes row -->
-  <div class="donate-grid">
-    <div class="group">
-      <label class="lbl">KBZPay note</label>
-      <input id="kbzNoteIn" placeholder="e.g. Sitagu Monastery (Yangon)">
-    </div>
-    <div class="group">
-      <label class="lbl">CBPay note</label>
-      <input id="cbNoteIn" placeholder="e.g. Branch / Account hint">
-    </div>
-    <div class="group">
-      <label class="lbl">AYAPay note</label>
-      <input id="ayaNoteIn" placeholder="e.g. AYA Wallet name">
-    </div>
   </div>
 
   <!-- QR files row -->
   <div class="donate-grid">
+    <div class="group">
+      <label class="lbl">KBZPay note</label>
+      <input id="kbzNoteIn" placeholder="BuddhaCollege">
+    </div>
     <label class="file qrfile">
       <span>Upload KBZ QR</span>
       <input id="kbzQR" type="file" accept="image/*">
     </label>
+    <div class="group">
+      <label class="lbl">CBPay note</label>
+      <input id="cbNoteIn" placeholder="BuddhaCollege">
+    </div>
     <label class="file qrfile">
       <span>Upload CB QR</span>
       <input id="cbQR" type="file" accept="image/*">
     </label>
+    <div class="group">
+      <label class="lbl">AYAPay note</label>
+      <input id="ayaNoteIn" placeholder="BuddhaCollege">
+    </div>
     <label class="file qrfile">
       <span>Upload AYA QR</span>
       <input id="ayaQR" type="file" accept="image/*">
     </label>
   </div>
 
+  <button class="btn" onclick="saveDonation()">Save</button>
   <p class="note" style="margin-top:8px">
     * Save နှိပ်လိုက်ပြီဆို Donate page မှာ Public ပြသသွားမည်။
   </p>
