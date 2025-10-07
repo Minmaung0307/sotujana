@@ -312,29 +312,65 @@ function refreshRecordGate(){
   document.getElementById('recEmpty').textContent = can? 'Year ထည့်ပြီး Search' : 'Admin အတွက်သာ…';
   const nn = document.querySelector('.nonadmin-note'); if(nn) nn.style.display = can? 'none':'block';
 }
-window.saveRecord = async(ev)=>{
-  ev.preventDefault(); if(!auth.currentUser) return alert('Admin only');
-  const y=Number(document.getElementById('rYear').value), name=document.getElementById('rName').value.trim();
-  const age=Number(document.getElementById('rAge').value||0), nrc=document.getElementById('rNRC').value.trim();
-  const vow=document.getElementById('rVow').value.trim();
-  const edu=document.getElementById('rEdu').value.trim(), mother=document.getElementById('rMother').value.trim(), father=document.getElementById('rFather').value.trim();
-  const addr=document.getElementById('rAddr').value.trim();
-  const role=document.getElementById('rRole').value.trim(), phone=document.getElementById('rPhone').value.trim(), email=document.getElementById('rEmail').value.trim();
-  const photo=document.getElementById('rPhoto').files[0]||null; let url=''; if(photo){ const r=sref(st, `records/${y}-${Date.now()}-${photo.name}`); await uploadBytes(r,photo); url=await getDownloadURL(r); }
-  const payload = { y,name,age,vow,nrc,mother,father,addr,edu,role,phone,email,photo:url, ts:Date.now() };
-  if(editingId){
-    const prev = await getDoc(doc(db,'records', editingId)); const old = prev.exists()? prev.data(): {};
-    await setDoc(doc(db, 'records', editingId), { 
-  ...old, 
-  ...payload, 
-  photo: url || old.photo || '' 
-});
-  }else{
-    await addDoc(collection(db,'records'), payload);
+window.saveRecord = async (ev) => {
+  ev.preventDefault();
+
+  // Optional: Admin only
+  if (!auth.currentUser /* || !isAdmin */) return alert('Admin only');
+
+  const y = Number(document.getElementById('rYear').value);
+  const name = document.getElementById('rName').value.trim();
+  const age = Number(document.getElementById('rAge').value || 0);
+  const nrc = document.getElementById('rNRC').value.trim();
+  const vow = document.getElementById('rVow').value.trim();
+  const edu = document.getElementById('rEdu').value.trim();
+  const mother = document.getElementById('rMother').value.trim();
+  const father = document.getElementById('rFather').value.trim();
+  const addr = document.getElementById('rAddr').value.trim();
+  const role = document.getElementById('rRole').value.trim();
+  const phone = document.getElementById('rPhone').value.trim();
+  const email = document.getElementById('rEmail').value.trim();
+
+  const file = document.getElementById('rPhoto').files[0] || null;
+
+  let url = '';
+  if (file) {
+    const r = sref(st, `records/${y}-${Date.now()}-${file.name}`);
+    await uploadBytes(r, file);
+    url = await getDownloadURL(r);
   }
-  document.getElementById('recForm').reset(); editingId=null;
-  document.getElementById('recMsg').textContent='Saved'; setTimeout(()=>document.getElementById('recMsg').textContent='',1500);
-  try{ await window.searchRecords(); }catch(e){}
+
+  const payload = {
+    y, name, age, vow, nrc, mother, father, addr, edu, role, phone, email,
+    photo: url,
+    ts: Date.now() // or serverTimestamp()
+  };
+
+  if (editingId) {
+    const prev = await getDoc(doc(db, 'records', editingId));
+    const old = prev.exists() ? prev.data() : {};
+    await setDoc(
+      doc(db, 'records', editingId),
+      ({
+        ...old,
+        ...payload,
+        photo: url || old.photo || ''
+      })
+    );
+  } else {
+    await addDoc(collection(db, 'records'), payload);
+  }
+
+  document.getElementById('recForm').reset();
+  editingId = null;
+
+  const msgEl = document.getElementById('recMsg');
+  if (msgEl) {
+    msgEl.textContent = 'Saved';
+    setTimeout(() => (msgEl.textContent = ''), 1500);
+  }
+
+  try { await window.searchRecords(); } catch (e) {}
 };
 window.searchRecords = async()=>{
   if(!auth.currentUser || !isAdmin) return alert('Admin only');
