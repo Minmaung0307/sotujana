@@ -312,32 +312,35 @@ function refreshRecordGate(){
   document.getElementById('recEmpty').textContent = can? 'Year ထည့်ပြီး Search' : 'Admin အတွက်သာ…';
   const nn = document.querySelector('.nonadmin-note'); if(nn) nn.style.display = can? 'none':'block';
 }
-window.saveRecord = async (ev) => {
+// put this whole function (replace your current one)
+window.saveRecord = async function (ev) {
   ev.preventDefault();
+  if (!auth.currentUser /* || !isAdmin */) { alert('Admin only'); return; }
 
-  // Optional: Admin only
-  if (!auth.currentUser /* || !isAdmin */) return alert('Admin only');
-
-  const y = Number(document.getElementById('rYear').value);
-  const name = document.getElementById('rName').value.trim();
-  const age = Number(document.getElementById('rAge').value || 0);
-  const nrc = document.getElementById('rNRC').value.trim();
-  const vow = document.getElementById('rVow').value.trim();
-  const edu = document.getElementById('rEdu').value.trim();
-  const mother = document.getElementById('rMother').value.trim();
-  const father = document.getElementById('rFather').value.trim();
-  const addr = document.getElementById('rAddr').value.trim();
-  const role = document.getElementById('rRole').value.trim();
+  const y     = Number(document.getElementById('rYear').value);
+  const name  = document.getElementById('rName').value.trim();
+  const age   = Number(document.getElementById('rAge').value || 0);
+  const nrc   = document.getElementById('rNRC').value.trim();
+  const vow   = document.getElementById('rVow').value.trim();
+  const edu   = document.getElementById('rEdu').value.trim();
+  const mother= document.getElementById('rMother').value.trim();
+  const father= document.getElementById('rFather').value.trim();
+  const addr  = document.getElementById('rAddr').value.trim();
+  const role  = document.getElementById('rRole').value.trim();
   const phone = document.getElementById('rPhone').value.trim();
   const email = document.getElementById('rEmail').value.trim();
 
-  const file = document.getElementById('rPhoto').files[0] || null;
+  const file = (document.getElementById('rPhoto').files[0]) || null;
 
   let url = '';
-  if (file) {
-    const r = sref(st, `records/${y}-${Date.now()}-${file.name}`);
-    await uploadBytes(r, file);
-    url = await getDownloadURL(r);
+  try {
+    if (file) {
+      const r = sref(st, `records/${y}-${Date.now()}-${file.name}`);
+      await uploadBytes(r, file);
+      url = await getDownloadURL(r);
+    }
+  } catch (e) {
+    console.warn('Photo upload failed', e);
   }
 
   const payload = {
@@ -346,32 +349,41 @@ window.saveRecord = async (ev) => {
     ts: Date.now() // or serverTimestamp()
   };
 
-  if (editingId) {
-    const prev = await getDoc(doc(db, 'records', editingId));
-    const old = prev.exists() ? prev.data() : {};
-    await setDoc(
-      doc(db, 'records', editingId),
-      ({
-        ...old,
-        ...payload,
-        photo: url || old.photo || ''
-      })
-    );
-  } else {
-    await addDoc(collection(db, 'records'), payload);
+  try {
+    if (editingId) {
+      const prev = await getDoc(doc(db, 'records', editingId));
+      const old  = prev.exists() ? prev.data() : {};
+
+      await setDoc(
+        doc(db, 'records', editingId),
+        ({
+          ...old,
+          ...payload,
+          photo: url || old.photo || ''
+        })
+      );
+    } else {
+      await addDoc(collection(db, 'records'), payload);
+    }
+  } catch (e) {
+    console.error('saveRecord failed:', e);
+    alert('Save failed: ' + e.message);
+    return;
   }
 
-  document.getElementById('recForm').reset();
+  const form = document.getElementById('recForm');
+  if (form) form.reset();
   editingId = null;
 
   const msgEl = document.getElementById('recMsg');
   if (msgEl) {
     msgEl.textContent = 'Saved';
-    setTimeout(() => (msgEl.textContent = ''), 1500);
+    setTimeout(() => { msgEl.textContent = ''; }, 1500);
   }
 
   try { await window.searchRecords(); } catch (e) {}
 };
+
 window.searchRecords = async()=>{
   if(!auth.currentUser || !isAdmin) return alert('Admin only');
   const y = Number(document.getElementById('recYear').value||0);
