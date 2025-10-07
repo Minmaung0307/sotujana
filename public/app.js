@@ -194,6 +194,7 @@ window.createPost = async (ev) => {
   if (postId) {
     await updateDoc(doc(db, "posts", postId), {
       title,
+      titleLower: title.toLowerCase().trim(),
       blocks,
       updatedAt: serverTimestamp(),
     });
@@ -201,6 +202,7 @@ window.createPost = async (ev) => {
   } else {
     await addDoc(collection(db, "posts"), {
       title,
+      titleLower: title.toLowerCase().trim(),
       blocks,
       month: d.getMonth() + 1,
       year: d.getFullYear(),
@@ -225,6 +227,137 @@ window.createPost = async (ev) => {
   const msg = document.getElementById("postMsg");
   if (msg) msg.textContent = "";
   loadLatest();
+};
+
+// --- Admin: Search / Manage Posts ---
+window.adminClearSearch = function(){
+  const q = document.getElementById('admPostQuery'); if(q) q.value = '';
+  const y = document.getElementById('admPostYear'); if(y) y.value = '';
+  const box = document.getElementById('adminPostList'); if(box) box.innerHTML = '';
+  const em = document.getElementById('adminPostEmpty'); if(em) em.style.display = 'none';
+};
+
+window.adminSearchPosts = async function(){
+  if(!auth.currentUser || !isAdmin){ alert('Admin only'); return; }
+
+  const box = document.getElementById('adminPostList');
+  const em  = document.getElementById('adminPostEmpty');
+  if (box) box.innerHTML = '';
+  if (em)  em.style.display = 'none';
+
+  const kw = (document.getElementById('admPostQuery')?.value || '').toLowerCase().trim();
+  const wantYear = (document.getElementById('admPostYear')?.value || '').trim();
+
+  // လျင်မြန်စေဖို့ latest 200 ခေါ်ပြီး client-side filter
+  const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(200)));
+  const rows = [];
+  snap.forEach(d=>{
+    const p = d.data();
+    // year filter (optional)
+    if (wantYear && String(p.year) !== wantYear) return;
+
+    // keyword filter (title + text blocks)
+    if (kw){
+      const hayTitle = (p.titleLower || (p.title||'').toLowerCase());
+      let hayText = '';
+      (p.blocks || []).forEach(b=>{
+        if (b.type === 'text') hayText += ' ' + (b.text || '').toLowerCase();
+      });
+      if (!hayTitle.includes(kw) && !hayText.includes(kw)) return;
+    }
+
+    rows.push({ id:d.id, ...p });
+  });
+
+  if (!rows.length){
+    if (em) em.style.display = 'block';
+    return;
+  }
+
+  rows.forEach(p=>{
+    const item = document.createElement('div');
+    item.className = 'row card';
+    item.style.alignItems = 'flex-start';
+    item.innerHTML = `
+      <div style="flex:1; min-width:220px">
+        <div class="row" style="gap:8px; align-items:center">
+          <strong>${escapeHTML(p.title || 'Untitled')}</strong>
+          <span class="pill">${p.month || '?'} / ${p.year || '?'}</span>
+        </div>
+        <div class="note mt">
+          ${(p.blocks||[]).slice(0,1).map(b=>{
+              if(b.type==='text'){
+                const t = (b.text||'').replace(/\s+/g,' ').slice(0,120);
+                return escapeHTML(t) + (b.text && b.text.length>120 ? '…' : '');
+              }
+              if(b.type==='image'){ return '[image]'; }
+              if(b.type==='video'){ return '[video]'; }
+              if(b.type==='audio'){ return '[audio]'; }
+              return '';
+          }).join('')}
+        </div>
+      </div>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <button class="btn small edit"   onclick="editPost('${p.id}')">✏ Edit</button>
+        <button class="btn small danger" onclick="deletePost('${p.id}')">🗑 Delete</button>
+        <button class="btn small"        onclick="duplicatePost('${p.id}')">📄 Duplicate</button>
+      </div>
+    `;
+    box.appendChild(item);
+  });
+};
+
+// Duplicate = editor ထဲကို load ပြီး postId ကို ဖျက် → Save လုပ်ရင် post အသစ်တင်မယ်
+window.duplicatePost = async function(id){
+  if(!auth.currentUser || !isAdmin){ alert('Admin only'); return; }
+  const snap = await getDoc(doc(db,'posts', id));
+  if(!snap.exists()) return alert('Post not found');
+
+  const p = snap.data();
+  // Editor ထဲ fill
+  const titleEl = document.getElementById('pTitle');
+  if (titleEl) titleEl.value = (p.title ? p.title + ' (Copy)' : 'Untitled (Copy)');
+
+  const allow = !!(p.blocks||[]).find(b=>b.type==='text' && b.allowHTML===true);
+  const allowEl = document.getElementById('pAllowHTML'); if(allowEl) allowEl.checked = allow;
+
+  const host = document.getElementById('blocks');
+  if (host) {
+    host.innerHTML='';
+    (p.blocks || []).forEach(b=>{
+      if(b.type==='text'){
+        const wrap=document.createElement('div');
+        wrap.innerHTML = `<div class="block" data-type="text">
+            <textarea placeholder="Text or HTML..." data-role="text"></textarea>
+          </div>`;
+        const el=wrap.firstElementChild;
+        el.querySelector('[data-role="text"]').value = b.text || '';
+        host.appendChild(el);
+      } else {
+        const preview = b.type==='image' ? `<img src="${b.url}" class="prev">`
+                     : b.type==='video' ? `<video src="${b.url}" class="prev" controls></video>`
+                     : `<audio src="${b.url}" class="prev" controls></audio>`;
+        const accept = b.type==='image' ? 'image/*' : b.type==='video' ? 'video/*' : 'audio/*';
+        const wrap=document.createElement('div');
+        wrap.innerHTML = `<div class="block" data-type="${b.type}" data-existing-url="${b.url}">
+            <div class="post-media">${preview}</div>
+            <div class="media-input">
+              <label class="file small">
+                <span>Replace ${b.type.toUpperCase()}</span>
+                <input type="file" accept="${accept}" data-role="file"/>
+              </label>
+            </div>
+          </div>`;
+        host.appendChild(wrap.firstElementChild);
+      }
+    });
+  }
+
+  // IMPORTANT: new post ဖြစ်အောင် postId ကို clear
+  const idEl = document.getElementById('pId'); if (idEl) idEl.value = '';
+
+  show('admin');
+  window.scrollTo({top:0, behavior:'smooth'});
 };
 
 // ---------- Helpers ----------

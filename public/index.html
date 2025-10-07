@@ -193,6 +193,27 @@
   </div>
 </div>
 
+<!-- ===== Admin: Manage Posts (Search / Edit / Delete / Duplicate) ===== -->
+<div class="card">
+  <div class="row" style="align-items:center; gap:12px;">
+    <h3 style="margin:0">Manage Posts</h3>
+    <span class="pill">Admin only</span>
+  </div>
+
+  <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
+    <input id="admPostQuery" placeholder="Search by title or text…" style="flex:1; min-width:220px;">
+    <select id="admPostYear" style="width:140px">
+      <option value="">All Years</option>
+      <!-- year options will be filled by JS if you want; optional -->
+    </select>
+    <button class="btn" onclick="adminSearchPosts()">Search</button>
+    <button class="btn subtle" onclick="adminClearSearch()">Clear</button>
+  </div>
+
+  <div id="adminPostList" class="stack" style="margin-top:12px;"></div>
+  <div id="adminPostEmpty" class="empty" style="display:none">No posts found…</div>
+</div>
+
       <div class="card inset">
         <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန်</h3>
         <form id="recForm" onsubmit="saveRecord(event)">
