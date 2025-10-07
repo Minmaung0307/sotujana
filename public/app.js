@@ -324,7 +324,11 @@ window.saveRecord = async(ev)=>{
   const payload = { y,name,age,vow,nrc,mother,father,addr,edu,role,phone,email,photo:url, ts:Date.now() };
   if(editingId){
     const prev = await getDoc(doc(db,'records', editingId)); const old = prev.exists()? prev.data(): {};
-    await setDoc(doc(db,'records', editingId), { ...old, ...payload, photo:url||old.photo||'' });
+    await setDoc(doc(db, 'records', editingId), { 
+  ...old, 
+  ...payload, 
+  photo: url || old.photo || '' 
+});
   }else{
     await addDoc(collection(db,'records'), payload);
   }
@@ -340,7 +344,7 @@ window.searchRecords = async()=>{
   const host = document.getElementById('recGrid'); host.innerHTML='';
   const snap = await getDocs(query(collection(db,'records'), where('y','==',y)));
   let n=0; snap.forEach(d=>{
-    const x = {id:d.id, ...d.data()};
+    const x = { id: d.id, ...d.data() };
     const hay = [x.name,x.phone,x.email,(x.addr||''),(x.vow||'')].map(v=>(v||'').toLowerCase()).join(' ');
     if(qtext && !hay.includes(qtext)) return;
     n++;
