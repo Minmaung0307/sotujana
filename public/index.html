@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ဘုန်းကြီးကျောင်း • Simple App v2</title>
+  <title>BuddhaCollege</title>
   <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,16 +12,18 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <!-- Topbar -->
   <header class="topbar shadow">
     <div class="row">
-      <div class="brand">ဘုန်းကြီးကျောင်း</div>
+      <div class="brand">BuddhaCollege</div>
       <div class="space"></div>
       <span id="authState" class="pill">Guest</span>
-      <button id="btnTopSignIn"  class="btn sm">Sign in</button>
+      <button id="btnTopSignIn"  class="btn sm" onclick="openLogin()">Sign in</button>
       <button id="btnTopSignOut" class="btn sm" style="display:none">Sign out</button>
     </div>
   </header>
 
+  <!-- Nav + settings -->
   <nav id="mainNav" class="nav shadow">
     <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
     <button              data-tab="events" onclick="tab(this,'events')">📅 Events</button>
@@ -46,6 +48,7 @@
     </div>
   </nav>
 
+  <!-- HOME -->
   <main id="home" class="section active">
     <div class="wrap">
       <div class="hero card gradient">
@@ -61,6 +64,7 @@
     </div>
   </main>
 
+  <!-- EVENTS -->
   <section id="events" class="section">
     <div class="wrap">
       <div class="row toolbar">
@@ -78,6 +82,7 @@
     </div>
   </section>
 
+  <!-- DONATE -->
   <section id="donate" class="section">
     <div class="wrap">
       <div class="card">
@@ -103,11 +108,12 @@
     </div>
   </section>
 
+  <!-- RECORDS -->
   <section id="records" class="section">
     <div class="wrap">
       <div class="card gradient">
         <h2>နှစ်စဉ်မှတ်တမ်း</h2>
-        <p class="muted nonadmin-note">Admin မပါလျှင် ဖတ်ရုံသာ — data အားလုံးကို cloud များတွင် သိမ်းထားပြီး device မတူလည်း အလွယ်တကူ ပြန်မြင်နိုင်ပါသည်။</p>
+        <p class="muted nonadmin-note">Admin မပါလျှင် ဖတ်ရုံသာ — cloud တွင် သိမ်းထားသော data များကို မည်သည့် device မှ မဆို ပြပေးသည်။</p>
       </div>
       <div class="row toolbar">
         <input id="recYear" type="number" placeholder="Year e.g. 2025">
@@ -119,19 +125,9 @@
     </div>
   </section>
 
+  <!-- ADMIN (still available after login) -->
   <section id="admin" class="section" style="display:none">
     <div class="wrap">
-      <div class="card">
-        <div class="row">
-          <h2>Admin</h2>
-          <div class="space"></div>
-          <input id="admEmail" type="email" placeholder="admin email">
-          <input id="admPass"  type="password" placeholder="password">
-          <button class="btn primary" onclick="login()">Sign in</button>
-          <button class="btn" onclick="logout()">Sign out</button>
-        </div>
-      </div>
-
       <div class="grid two">
         <div class="card inset">
           <h3>ပို့စ်အသစ်တင်ရန် (Raw HTML အပါအဝင်)</h3>
@@ -200,16 +196,32 @@
           </div>
         </form>
       </div>
-
-      <p class="muted small mt">Non-admin users: Posts, Events, Donations ကိုကြည့်နိုင်၊ Calendar မှတ်ချက်များကိုဖတ်ရုံ၊ Records ကို ရှာကြည့်ရန် Admin လိုအပ်ပါသည်။</p>
     </div>
   </section>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="closeLogin()"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <div class="row">
+        <h3 id="loginTitle">Admin Sign in</h3>
+        <div class="space"></div>
+        <button class="btn sm" onclick="closeLogin()">✕</button>
+      </div>
+      <input id="mEmail" type="email" placeholder="admin email" autocomplete="username">
+      <input id="mPass" type="password" placeholder="password" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter'){loginModal()}">
+      <div class="row">
+        <button class="btn primary" onclick="loginModal()">Sign in</button>
+      </div>
+      <p class="note small">Admin မဟုတ်လျှင် Posts/Events/Donations များကို ကြည့်နိုင်ပါသည်။</p>
+    </div>
+  </div>
 
   <footer class="footer">© <span id="year"></span> Bhikkhu • Firebase</footer>
 
   <script type="module" src="./firebase.js"></script>
   <script type="module" src="./app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
