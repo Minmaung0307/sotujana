@@ -63,7 +63,12 @@ async function updateAuthUI(u){
   }
   refreshRecordGate();
 }
-onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
+// onAuthStateChanged(auth, (u)=> { updateAuthUI(u); if(u) closeLogin(); });
+onAuthStateChanged(auth, function(u){
+  updateAuthUI(u).then(function(){
+    loadLatest(); // login/logout အတိုင်း posts UI ပြန်ဖော်ပြ
+  });
+});
 
 window.logout = async ()=>{
   try{ await signOut(auth); alert('Signed out'); location.reload(); }
@@ -125,27 +130,113 @@ window.createPost = async(ev)=>{
   loadLatest();
 };
 
-function safeHTML(s){ return (s||'').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,''); }
-function escapeHTML(s){ return (s||'').replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;","&quot;":"&quot;"}[m])) }
+// ---------- Helpers ----------
+function isLikedLocal(id){ return localStorage.getItem('liked_'+id)==='1'; }
+function setLikedLocal(id, v){ if(v) localStorage.setItem('liked_'+id,'1'); else localStorage.removeItem('liked_'+id); }
+function getLastCount(id){
+  const n = Number(localStorage.getItem('likes_last_'+id));
+  return Number.isFinite(n) ? n : null;
+}
+function setLastCount(id, n){ localStorage.setItem('likes_last_'+id, String(n)); }
+
+function safeHTML(s){
+  return String(s||'').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,'');
+}
+function escapeHTML(s){
+  const map = { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" };
+  return String(s||'').replace(/[&<>"']/g, m => map[m]);
+}
+
+// ---------- Render post blocks ----------
 function renderBlocks(arr){
-  return arr.map(b=>{
-    if(b.type==='text') return `<div style="white-space:pre-wrap">${b.allowHTML? safeHTML(b.text): escapeHTML(b.text)}</div>`;
-    if(b.type==='image') return `<img src="${b.url}" style="width:100%;border:1px solid #e5e7eb;border-radius:10px">`;
-    if(b.type==='video') return `<video src="${b.url}" controls style="width:100%;border-radius:10px"></video>`;
-    if(b.type==='audio') return `<audio src="${b.url}" controls style="width:100%"></audio>`;
+  return (arr||[]).map(function(b){
+    if(b.type==='text'){
+      if (b.allowHTML) {
+        return '<div style="white-space:pre-wrap">' + safeHTML(b.text||'') + '</div>';
+      }
+      return '<div style="white-space:pre-wrap">' + escapeHTML(b.text||'') + '</div>';
+    }
+    if(b.type==='image'){
+      return '<div class="post-media"><img src="'+ b.url +'" alt=""></div>';
+    }
+    if(b.type==='video'){
+      return '<div class="post-media"><video src="'+ b.url +'" controls></video></div>';
+    }
+    if(b.type==='audio'){
+      return '<div class="post-media"><audio src="'+ b.url +'" controls></audio></div>';
+    }
     return '';
   }).join('');
 }
-async function loadLatest(){
-  const host = document.getElementById('postGrid'); host.innerHTML='';
+
+// ---------- Like toggle ----------
+window.toggleLike = async function(id){
+  const btn = document.querySelector('[data-like="'+id+'"]');
+  if(!btn) return;
+  const countEl = btn.querySelector('.like-count');
+  const wasLiked = isLikedLocal(id);
+  const cur = parseInt((countEl && countEl.textContent) ? countEl.textContent : '0', 10);
+  const next = wasLiked ? Math.max(0, cur-1) : cur+1;
+
+  // optimistic UI
+  btn.classList.toggle('liked', !wasLiked);
+  if(countEl) countEl.textContent = String(next);
+  setLikedLocal(id, !wasLiked);
+  setLastCount(id, next);
+
+  // server increment (rules မဖြစ်သေးရင် fail silently)
   try{
-    const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24)));
-    let n=0; snap.forEach(d=>{ const p=d.data(); n++; const el=document.createElement('div'); el.className='card';
-      el.innerHTML = `<h3>${escapeHTML(p.title||'Untitled')}</h3>${renderBlocks(p.blocks||[])}<div class="note mt">${p.month||'?'} / ${p.year||'?'}</div>`;
+    await updateDoc(doc(db,'posts', id), { likes: increment(wasLiked ? -1 : 1) });
+  }catch(e){}
+};
+
+// ---------- Load latest posts (1 block per post + admin buttons) ----------
+async function loadLatest(){
+  const host = document.getElementById('postGrid');
+  if(!host) return;
+  host.innerHTML='';
+
+  try{
+    const q = query(collection(db,'posts'), orderBy('createdAt','desc'), limit(24));
+    const snap = await getDocs(q);
+    var n = 0;
+
+    snap.forEach(function(d){
+      var p = d.data(); n++;
+
+      var likesServer = (typeof p.likes==='number') ? p.likes : 0;
+      var liked = isLikedLocal(d.id);
+      var shadow = getLastCount(d.id);
+      var likesToShow = (liked && shadow!=null && shadow>likesServer) ? shadow : likesServer;
+
+      var el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML =
+        '<h3>'+ escapeHTML(p.title||'Untitled') +'</h3>' +
+        renderBlocks(p.blocks||[]) +
+        '<div class="row mt post-foot">' +
+          '<span class="note">'+ (p.month||'?') +' / '+ (p.year||'?') +'</span>' +
+          '<div class="space"></div>' +
+          '<button class="like-btn '+ (liked?'liked':'') +'" data-like="'+ d.id +'" onclick="toggleLike(\''+ d.id +'\')">❤ ' +
+            '<span class="like-count">'+ likesToShow +'</span>' +
+          '</button>' +
+          (window.isAdmin ? (
+            '<div class="post-actions">' +
+              '<button class="btn small edit" onclick="editPost(\''+ d.id +'\')">✏ Edit</button>' +
+              '<button class="btn small danger" onclick="deletePost(\''+ d.id +'\')">🗑 Delete</button>' +
+            '</div>'
+          ) : '') +
+        '</div>';
+
       host.appendChild(el);
     });
-    document.getElementById('homeEmpty').style.display = n? 'none':'block';
-  }catch(e){ host.innerHTML = `<div class="empty">Posts မဖတ်နိုင်ပါ — ${e.message}</div>`; }
+
+    var empty = document.getElementById('homeEmpty');
+    if(empty){ empty.style.display = n ? 'none' : 'block'; }
+
+  }catch(e){
+    host.innerHTML = '<div class="empty">Posts မဖတ်နိုင်ပါ — '+ e.message +'</div>';
+  }
 }
 loadLatest();
 

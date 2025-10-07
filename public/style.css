@@ -94,3 +94,33 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
 .file.small span{ display:inline-block; padding:6px 10px; border:1px dashed var(--line, #e5e7eb); border-radius:8px; cursor:pointer; font-size:.9rem; }
 .switch{ display:inline-flex; align-items:center; gap:8px; font-size:.9rem; }
 
+/* Post as blocks (one per row) */
+#postGrid{ display:flex; flex-direction:column; gap:20px; }
+#postGrid .card{ display:block; width:100%; }
+
+/* Media center + 65% */
+.post-media{ display:flex; justify-content:center; margin:12px 0; }
+.post-media > img,
+.post-media > video,
+.post-media > audio{
+  width:65%; max-width:900px; height:auto;
+  border-radius:10px; border:1px solid var(--line, #e5e7eb);
+}
+
+/* Footer & admin buttons */
+.post-foot{ align-items:center; flex-wrap:wrap; gap:8px; }
+.post-actions{ display:inline-flex; gap:8px; }
+.btn.small{ padding:5px 10px; font-size:.85rem; border-radius:8px; }
+.btn.danger{ background:#ef4444; color:#fff; }
+.btn.edit{ background:#3b82f6; color:#fff; }
+
+/* Like button */
+.like-btn{
+  border:1px solid var(--line, #e5e7eb);
+  background:#fff; padding:6px 10px; border-radius:999px;
+  cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:6px;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.like-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06); }
+.like-btn.liked{ background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
+.like-count{ min-width:1.5ch; text-align:right; }
