@@ -146,46 +146,43 @@
           </form>
         </div>
 
-        <div class="card inset donate-admin">
-  <div class="row" style="align-items:center; gap:10px">
-    <h3 style="margin:0">Donations (KBZPay • CBPay • AYAPay)</h3>
-    <div class="space"></div>
-  </div>
+        <div class="card donate-admin">
+  <h3 class="donate-title">Donations (KBZPay • CBPay • AYAPay)</h3>
 
-  <!-- QR files row -->
-  <div class="donate-grid">
-    <div class="group">
+  <div class="donate-wrapper">
+    <!-- KBZ Group -->
+    <div class="donate-box">
       <label class="lbl">KBZPay note</label>
       <input id="kbzNoteIn" placeholder="BuddhaCollege">
+      <label class="file qrfile">
+        <span>Upload KBZ QR</span>
+        <input id="kbzQR" type="file" accept="image/*">
+      </label>
     </div>
-    <label class="file qrfile">
-      <span>Upload KBZ QR</span>
-      <input id="kbzQR" type="file" accept="image/*">
-    </label>
-    <div class="group">
+
+    <!-- CB Group -->
+    <div class="donate-box">
       <label class="lbl">CBPay note</label>
       <input id="cbNoteIn" placeholder="BuddhaCollege">
+      <label class="file qrfile">
+        <span>Upload CB QR</span>
+        <input id="cbQR" type="file" accept="image/*">
+      </label>
     </div>
-    <label class="file qrfile">
-      <span>Upload CB QR</span>
-      <input id="cbQR" type="file" accept="image/*">
-    </label>
-    <div class="group">
+
+    <!-- AYA Group -->
+    <div class="donate-box">
       <label class="lbl">AYAPay note</label>
       <input id="ayaNoteIn" placeholder="BuddhaCollege">
+      <label class="file qrfile">
+        <span>Upload AYA QR</span>
+        <input id="ayaQR" type="file" accept="image/*">
+      </label>
     </div>
-    <label class="file qrfile">
-      <span>Upload AYA QR</span>
-      <input id="ayaQR" type="file" accept="image/*">
-    </label>
   </div>
 
-  <button class="btn" onclick="saveDonation()">Save</button>
-  <p class="note" style="margin-top:8px">
-    * Save နှိပ်လိုက်ပြီဆို Donate page မှာ Public ပြသသွားမည်။
-  </p>
+  <button class="save-btn" onclick="saveDonation()">💾 Save</button>
 </div>
-      </div>
 
       <div class="card inset">
         <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန်</h3>
