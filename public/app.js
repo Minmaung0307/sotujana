@@ -315,24 +315,27 @@ function refreshRecordGate(){
 // put this whole function (replace your current one)
 window.saveRecord = async function (ev) {
   ev.preventDefault();
-  if (!auth.currentUser /* || !isAdmin */) { alert('Admin only'); return; }
+  if (!auth.currentUser) {
+    alert('Admin only');
+    return;
+  }
 
-  const y     = Number(document.getElementById('rYear').value);
-  const name  = document.getElementById('rName').value.trim();
-  const age   = Number(document.getElementById('rAge').value || 0);
-  const nrc   = document.getElementById('rNRC').value.trim();
-  const vow   = document.getElementById('rVow').value.trim();
-  const edu   = document.getElementById('rEdu').value.trim();
-  const mother= document.getElementById('rMother').value.trim();
-  const father= document.getElementById('rFather').value.trim();
-  const addr  = document.getElementById('rAddr').value.trim();
-  const role  = document.getElementById('rRole').value.trim();
+  const y = Number(document.getElementById('rYear').value);
+  const name = document.getElementById('rName').value.trim();
+  const age = Number(document.getElementById('rAge').value || 0);
+  const nrc = document.getElementById('rNRC').value.trim();
+  const vow = document.getElementById('rVow').value.trim();
+  const edu = document.getElementById('rEdu').value.trim();
+  const mother = document.getElementById('rMother').value.trim();
+  const father = document.getElementById('rFather').value.trim();
+  const addr = document.getElementById('rAddr').value.trim();
+  const role = document.getElementById('rRole').value.trim();
   const phone = document.getElementById('rPhone').value.trim();
   const email = document.getElementById('rEmail').value.trim();
 
-  const file = (document.getElementById('rPhoto').files[0]) || null;
-
+  const file = document.getElementById('rPhoto').files[0] || null;
   let url = '';
+
   try {
     if (file) {
       const r = sref(st, `records/${y}-${Date.now()}-${file.name}`);
@@ -346,21 +349,21 @@ window.saveRecord = async function (ev) {
   const payload = {
     y, name, age, vow, nrc, mother, father, addr, edu, role, phone, email,
     photo: url,
-    ts: Date.now() // or serverTimestamp()
+    ts: Date.now()
   };
 
   try {
     if (editingId) {
       const prev = await getDoc(doc(db, 'records', editingId));
-      const old  = prev.exists() ? prev.data() : {};
+      const old = prev.exists() ? prev.data() : {};
 
       await setDoc(
         doc(db, 'records', editingId),
-        ({
+        {
           ...old,
           ...payload,
           photo: url || old.photo || ''
-        })
+        }
       );
     } else {
       await addDoc(collection(db, 'records'), payload);
@@ -378,10 +381,16 @@ window.saveRecord = async function (ev) {
   const msgEl = document.getElementById('recMsg');
   if (msgEl) {
     msgEl.textContent = 'Saved';
-    setTimeout(() => { msgEl.textContent = ''; }, 1500);
+    setTimeout(() => {
+      msgEl.textContent = '';
+    }, 1500);
   }
 
-  try { await window.searchRecords(); } catch (e) {}
+  try {
+    await window.searchRecords();
+  } catch (e) {
+    console.warn('searchRecords error', e);
+  }
 };
 
 window.searchRecords = async()=>{
