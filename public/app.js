@@ -408,7 +408,7 @@ async function fetchYearRecords(){
   const snap = await getDocs(query(collection(db,'records'), where('y','==',y)));
   const rows = [];
   snap.forEach(d=>{
-    const x = {id:d.id, ...d.data()};
+    const x = { id: d.id, ...d.data() };
     rows.push({
       photo: x.photo||'',
       name: x.name||'',
