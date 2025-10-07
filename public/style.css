@@ -58,3 +58,30 @@ html[data-theme="emerald"]{ --bg:#effdf5; --card:#ffffff; --ink:#064e3b; --muted
 html[data-theme="ocean"]{ --bg:#ecfeff; --card:#ffffff; --ink:#0e7490; --muted:#0284c7; --line:#bae6fd; --brand:#06b6d4; --accent:#22d3ee; }
 html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#be123c; --line:#fecdd3; --brand:#f43f5e; --accent:#fb7185; }
 .gradient{ background: linear-gradient(135deg, rgba(34,211,238,.12), rgba(2,132,199,.06)); }
+
+/* --- Records photo fit --- */
+.rec-photo-box{
+  height: 240px;                 /* နည်းနည်းမြင့်ပေးထားတယ် */
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:#fff;
+  overflow: hidden;              /* scroll bar မပေါ်အောင် */
+  margin-bottom: 8px;
+}
+.rec-photo-box img.rec-photo{
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;           /* <- fit: အပြည့်ထင် ပြ */
+}
+.rec-photo-box.empty{
+  border: 1px dashed var(--line);
+  color: #94a3b8;
+}
+@media (min-width: 640px){
+  .rec-photo-box{ height: 260px; }
+}

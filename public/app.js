@@ -235,8 +235,9 @@ window.searchRecords = async()=>{
     const hay = [x.name,x.phone,x.email,(x.addr||''),(x.vow||'')].map(v=>(v||'').toLowerCase()).join(' ');
     if(qtext && !hay.includes(qtext)) return;
     n++;
-    const img = x.photo ? `<img src="${x.photo}" alt="${x.name||''}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:8px">`
-                        : `<div style="height:220px;border-radius:12px;border:1px dashed #e5e7eb;display:flex;align-items:center;justify-content:center;color:#94a3b8">No Photo</div>`;
+    const img = x.photo
+  ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name||''}"></div>`
+  : `<div class="rec-photo-box empty">No Photo</div>`;
     const item = document.createElement('div'); item.className='card';
     item.innerHTML = `${img}
       <ol style="padding-left:18px;margin:0">
