@@ -1,4 +1,4 @@
-Bhikkhu School App — Setup
+BuddhaCollege App — Setup
 =================================
 
 FILES
