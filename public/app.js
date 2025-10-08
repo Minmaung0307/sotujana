@@ -405,36 +405,25 @@ function escapeHTML(s) {
 // ---------- Render post blocks ----------
 function renderBlocks(arr) {
   const out = [];
-  const gallery = []; // temp bucket for consecutive images
+  const gallery = [];
 
   function flushGallery() {
     if (!gallery.length) return;
-    // chunk into rows of up to 3 images
-    let i = 0;
-    const rows = [];
-    while (i < gallery.length) {
-      rows.push(gallery.slice(i, i + 3));
-      i += 3;
-    }
+    let i = 0, rows = [];
+    while (i < gallery.length) { rows.push(gallery.slice(i, i + 3)); i += 3; }
     const html = rows.map(row => {
-      const cols = row.length; // 1 / 2 / 3
+      const cols = row.length;
       const items = row.map(url =>
-        `<img src="${url}" alt="" onclick="openMediaZoom('img','${url}')">`
+        `<img src="${url}" alt="" onclick="openMediaZoom('img','${url}')" onload="markPortrait(this)">`
       ).join('');
       return `<div class="gallery-row cols-${cols}">${items}</div>`;
     }).join('');
     out.push(`<div class="gallery">${html}</div>`);
-    gallery.length = 0; // reset
+    gallery.length = 0;
   }
 
   (arr || []).forEach(b => {
-    if (b.type === "image") {
-      // collect consecutive images
-      gallery.push(b.url);
-      return;
-    }
-
-    // If not image → flush images first
+    if (b.type === "image") { gallery.push(b.url); return; }
     flushGallery();
 
     if (b.type === "text") {
@@ -442,33 +431,34 @@ function renderBlocks(arr) {
       out.push(`<div style="white-space:pre-wrap">${txt}</div>`);
       return;
     }
-
     if (b.type === "video") {
-      out.push(
-        `<div class="post-media">
-           <video src="${b.url}" controls preload="metadata"
-                  onclick="openMediaZoom('video','${b.url}')"></video>
-         </div>`
-      );
+      out.push(`<div class="post-media"><video src="${b.url}" controls preload="metadata"
+              onclick="openMediaZoom('video','${b.url}')"></video></div>`);
       return;
     }
-
     if (b.type === "audio") {
-      out.push(
-        `<div class="post-media">
-           <audio src="${b.url}" controls preload="metadata"
-                  onclick="openMediaZoom('audio','${b.url}')"></audio>
-         </div>`
-      );
+      out.push(`<div class="post-media"><audio src="${b.url}" controls preload="metadata"
+              onclick="openMediaZoom('audio','${b.url}')"></audio></div>`);
       return;
     }
   });
 
-  // end of loop → flush any remaining images
   flushGallery();
-
   return out.join("");
 }
+
+// portrait tagger (onload မှာ ခေါ်မယ်)
+window.markPortrait = function(imgEl){
+  try{
+    const w = imgEl.naturalWidth || imgEl.width;
+    const h = imgEl.naturalHeight || imgEl.height;
+    if (h > w * 1.05) { // portrait-ish
+      imgEl.classList.add('portrait');
+    } else {
+      imgEl.classList.remove('portrait');
+    }
+  }catch(e){}
+};
 
 function needsClip(html, threshold = 450){
   const text = html.replace(/<[^>]+>/g,''); // rough text length
@@ -1207,31 +1197,36 @@ window.editPost = async function (id) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-// === Media zoom handling ===
+// === Media zoom handling (audio/video မပါအောင် ထိန်း) ===
 window.openMediaZoom = function(type, src){
   const modal = document.getElementById('mediaModal');
   const img = document.getElementById('zoomImg');
   const vid = document.getElementById('zoomVid');
   const aud = document.getElementById('zoomAud');
 
+  // hide all + stop sources
   img.classList.add('hidden');
-  vid.classList.add('hidden');
-  aud.classList.add('hidden');
+  vid.classList.add('hidden'); vid.pause(); vid.removeAttribute('src'); vid.load();
+  aud.classList.add('hidden'); aud.pause(); aud.removeAttribute('src'); aud.load();
 
-  modal.classList.remove('hidden');
   if(type === 'img'){
-    img.src = src;
-    img.classList.remove('hidden');
+    img.src = src; img.classList.remove('hidden');
   }else if(type === 'video'){
-    vid.src = src;
-    vid.classList.remove('hidden');
+    vid.src = src; vid.classList.remove('hidden');
   }else if(type === 'audio'){
-    aud.src = src;
-    aud.classList.remove('hidden');
+    aud.src = src; aud.classList.remove('hidden');
   }
+  modal.classList.remove('hidden');
 };
 
 window.closeMediaZoom = function(){
   const modal = document.getElementById('mediaModal');
+  const img = document.getElementById('zoomImg');
+  const vid = document.getElementById('zoomVid');
+  const aud = document.getElementById('zoomAud');
+
   modal.classList.add('hidden');
+  // cleanup
+  if(vid) { vid.pause(); vid.removeAttribute('src'); vid.load(); }
+  if(aud) { aud.pause(); aud.removeAttribute('src'); aud.load(); }
 };
