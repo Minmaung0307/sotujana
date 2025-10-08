@@ -277,10 +277,6 @@ async function loadDonateView(){
   }
 }
 
-// small helpers
-function escapeHTML(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
-function safeHTML(s){return String(s||'');}
-
 // renderBlocks() သင်သုံးနေပြီးသား function ကိုဆက်သုံးနိုင်
 // image/video/audio တွေအတွက် အရင်လို UI ஐ ထားနိုင်
 
@@ -531,6 +527,7 @@ function getLastCount(id) {
 function setLastCount(id, n) {
   localStorage.setItem("likes_last_" + id, String(n));
 }
+
 
 function safeHTML(s) {
   return String(s || "").replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
