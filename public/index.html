@@ -1,342 +1,477 @@
 <!DOCTYPE html>
 <html lang="my" data-theme="light" data-font="base">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>BuddhaCollege-MM</title>
-  <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;600;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css" />
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0ea5e9">
-</head>
-<body>
-  <header class="topbar shadow">
-    <div class="row">
-      <div class="brand">BuddhaCollege</div>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>BuddhaCollege-MM</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ctext y='0.9em' font-size='96'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@300;400;600;700&family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#0ea5e9" />
+  </head>
+  <body>
+    <!-- Top -->
+    <header class="topbar shadow">
+      <div class="row">
+        <div class="brand">BuddhaCollege</div>
+        <div class="space"></div>
+        <span id="authState" class="pill">Guest</span>
+        <button id="btnTopSignIn" class="btn sm" onclick="openLogin()">
+          Sign in
+        </button>
+        <button id="btnTopSignOut" class="btn sm" style="display: none">
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <!-- Nav -->
+    <nav id="mainNav" class="nav shadow">
+      <button class="active" data-tab="home" onclick="tab(this,'home')">
+        🏠 Home
+      </button>
+      <button data-tab="events" onclick="tab(this,'events')">📅 Events</button>
+      <button data-tab="donate" onclick="tab(this,'donate')">🙏 Donate</button>
+      <button data-tab="records" onclick="tab(this,'records')">
+        📘 Records
+      </button>
+      <button
+        data-tab="admin"
+        id="btnTabAdmin"
+        onclick="tab(this,'admin')"
+        style="display: none"
+      >
+        🔐 Admin
+      </button>
       <div class="space"></div>
-      <span id="authState" class="pill">Guest</span>
-      <button id="btnTopSignIn"  class="btn sm" onclick="openLogin()">Sign in</button>
-      <button id="btnTopSignOut" class="btn sm" style="display:none">Sign out</button>
-    </div>
-  </header>
-
-  <nav id="mainNav" class="nav shadow">
-    <button class="active" data-tab="home"   onclick="tab(this,'home')">🏠 Home</button>
-    <button              data-tab="events" onclick="tab(this,'events')">📅 Events</button>
-    <button              data-tab="donate" onclick="tab(this,'donate')">🙏 Donate</button>
-    <button              data-tab="records" onclick="tab(this,'records')">📘 Records</button>
-    <button              data-tab="admin" id="btnTabAdmin" onclick="tab(this,'admin')" style="display:none">🔐 Admin</button>
-    <div class="space"></div>
-    <div class="row settings-inline">
-      <select id="selTheme" class="opt">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="warm">Warm</option>
-        <option value="emerald">Emerald</option>
-        <option value="ocean">Ocean</option>
-        <option value="rose">Rose</option>
-      </select>
-      <select id="selFont" class="opt">
-        <option value="small">A-</option>
-        <option value="base" selected>A</option>
-        <option value="large">A+</option>
-      </select>
-    </div>
-  </nav>
-
-  <main id="home" class="section active">
-    <div class="wrap">
-      <div class="hero card gradient">
-        <h1>နေ့စဉ်လုပ်ငန်း</h1>
-        <p class="muted">ပုံ/စာ/ဗီဒီယို/အသံ ဖြင့် လှလှပပ ပြသထားပါသည်။</p>
-        <form id="signupForm" class="row" onsubmit="signup(event)">
-          <input id="signupEmail" type="email" inputmode="email" placeholder="Email (အသစ်တင်ရင် အော်တို အသိပေး)" required>
-          <button class="btn primary" type="submit">Sign up</button>
-        </form>
+      <div class="row settings-inline">
+        <select id="selTheme" class="opt">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="warm">Warm</option>
+          <option value="emerald">Emerald</option>
+          <option value="ocean">Ocean</option>
+          <option value="rose">Rose</option>
+        </select>
+        <select id="selFont" class="opt">
+          <option value="small">A-</option>
+          <option value="base" selected>A</option>
+          <option value="large">A+</option>
+        </select>
       </div>
-      <!-- Posts list -->
-      <div id="postGrid" class="post-list"></div>
-
-      <!-- Pager -->
-      <div id="pager" class="pager">
-        <button id="btnPrev" class="btn" disabled>&laquo; Previous</button>
-        <span id="pageInfo" class="muted">Page 1</span>
-        <button id="btnNext" class="btn">Next &raquo;</button>
-      </div>
-      <!-- <div id="homeEmpty" class="empty">တင်ထားသော ပို့စ်မရှိသေးပါ…</div> -->
-    </div>
-
-    <div id="mediaModal" class="media-modal hidden" onclick="closeMediaZoom()">
-  <img id="zoomImg" class="hidden" />
-  <video id="zoomVid" controls class="hidden"></video>
-  <audio id="zoomAud" controls class="hidden"></audio>
-</div>
-  </main>
-
-  <footer class="site-footer">
-  <div class="footer-grid">
-    <!-- <div class="footer-brand">
-      <div class="logo">☸</div>
-      <div>
-        <strong>BuddhaCollege</strong>
-        <div class="muted">ပိဋက/လုပ်ငန်းစဉ်/လုပ်ဆောင်ချက်များ</div>
-      </div>
-    </div> -->
-
-    <nav class="footer-links" aria-label="Site">
-      <a href="#home"   class="f-link">Home</a>
-      <a href="https://openlearn-mm.web.app/" class="f-link">OpenLearn</a>
-      <a href="https://foodfinder-mm.web.app/" class="f-link">FoodFinder</a>
-      <a href="https://www.digitalpalireader.online/_dprhtml/index.html" class="f-link">DPR</a>
-      <a href="https://tmf-mm.web.app/"  class="f-link">TMF</a>
     </nav>
 
-    <div class="footer-social" aria-label="Social">
-      <a class="s-btn" href="https://facebook.com/YOUR_PAGE" target="_blank" rel="noopener">
-        <!-- Facebook -->
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.49 17.52 2 12 2S2 6.49 2 12.06c0 5.01 3.66 9.17 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.88 3.76-3.88 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.91h-2.34V22c4.78-.77 8.44-4.93 8.44-9.94z"/></svg>
-        <!-- <span>Facebook</span> -->
-      </a>
-      <a class="s-btn" href="https://youtube.com/@YOUR_CHANNEL" target="_blank" rel="noopener">
-        <!-- YouTube -->
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3.1 3.1 0 0 0-2.2-2.2C19.3 3.5 12 3.5 12 3.5s-7.3 0-9.3.5A3.1 3.1 0 0 0 .5 6.2 32.3 32.3 0 0 0 0 12a32.3 32.3 0 0 0 .5 5.8 3.1 3.1 0 0 0 2.2 2.2c2 .5 9.3.5 9.3.5s7.3 0 9.3-.5a3.1 3.1 0 0 0 2.2-2.2A32.3 32.3 0 0 0 24 12a32.3 32.3 0 0 0-.5-5.8zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
-        <!-- <span>YouTube</span> -->
-      </a>
-      <a class="s-btn" href="https://t.me/YOUR_CHANNEL" target="_blank" rel="noopener">
-        <!-- Telegram -->
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.04 15.3 8.9 19.5c.3 0 .44-.14.6-.3l2.88-2.78 5.98 4.35c1.1.6 1.9.28 2.2-1.02l3.98-18.7h0c.36-1.68-.6-2.34-1.68-1.94L1.7 8.73C.06 9.37.08 10.33 1.4 10.74l5.3 1.65L19.2 5.7c.6-.38 1.15-.17.7.22L9.04 15.3z"/></svg>
-        <!-- <span>Telegram</span> -->
-      </a>
-      <a class="s-btn" href="viber://pa?chatURI=YOUR_VIBER" target="_blank" rel="noopener">
-        <!-- Viber -->
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 2C20 2 22 4 22 6.5v11C22 20 20 22 17.5 22h-11C4 22 2 20 2 17.5v-11C2 4 4 2 6.5 2h11zM7.7 7.1c-.3 0-.5.2-.5.5 0 4.2 3.4 7.5 7.5 7.5.3 0 .5-.2.5-.5V13c0-.3-.2-.5-.5-.5-1 0-2-.3-2.7-.9l-.7.7c-.5.5-1.3.6-1.9.2-.9-.6-1.7-1.4-2.3-2.3-.4-.6-.3-1.4.2-1.9l.7-.7c-.5-.7-.8-1.7-.8-2.7 0-.3-.2-.5-.5-.5H7.7z"/></svg>
-        <!-- <span>Viber</span> -->
-      </a>
-    </div>
-  </div>
+    <!-- Main content: all sections live inside main -->
+    <main>
+      <!-- Home -->
+      <section id="home" class="section active">
+        <div class="wrap">
+          <div class="hero card gradient">
+            <h1>နေ့စဉ်လုပ်ငန်း</h1>
+            <p class="muted">ပုံ/စာ/ဗီဒီယို/အသံ ဖြင့် လှလှပပ ပြသထားပါသည်။</p>
+            <form id="signupForm" class="row" onsubmit="signup(event)">
+              <input
+                id="signupEmail"
+                type="email"
+                inputmode="email"
+                placeholder="Email (အသစ်တင်ရင် အော်တို အသိပေး)"
+                required
+              />
+              <button class="btn primary" type="submit">Sign up</button>
+            </form>
+          </div>
 
-  <div class="footer-bottom">
-    <small>© <span id="year"></span> BuddhaCollege • All rights reserved.</small>
-  </div>
-</footer>
+          <!-- Posts list -->
+          <div id="postGrid" class="post-list"></div>
 
-  <section id="events" class="section">
-    <div class="wrap">
-      <div class="row toolbar">
-        <h2 class="title">အခါကြီး/ရက်ကြီးများ</h2>
-        <div class="space"></div>
-        <div class="row month-nav">
-          <button class="btn" onclick="prevMonth()">←</button>
-          <div id="monthLabel" class="pill"></div>
-          <button class="btn" onclick="nextMonth()">→</button>
+          <!-- Pager -->
+          <div id="pager" class="pager">
+            <button id="btnPrev" class="btn" disabled>&laquo; Previous</button>
+            <span id="pageInfo" class="muted">Page 1</span>
+            <button id="btnNext" class="btn">Next &raquo;</button>
+          </div>
+          <!-- <div id="homeEmpty" class="empty">တင်ထားသော ပို့စ်မရှိသေးပါ…</div> -->
         </div>
-      </div>
-      <div id="eventUpcoming" class="list"></div>
-      <h3 class="mt">ဤလ (Admin များအတွက် အကွက်တိုင်း စာရေးနိုင်)</h3>
-      <div id="cal" class="calendar"></div>
-    </div>
-  </section>
+      </section>
 
-  <section id="donate" class="section">
-    <div class="wrap">
-      <div class="card">
-        <h2 class="row">Donations <span class="badge">KBZPay • CBPay • AYAPay</span></h2>
-        <div class="grid three">
-          <div class="card inset">
-            <h3>KBZPay</h3>
-            <img id="qrKBZ" class="qr" alt="KBZPay QR">
-            <p class="note" id="kbzNote"></p>
-          </div>
-          <div class="card inset">
-            <h3>CBPay</h3>
-            <img id="qrCB" class="qr" alt="CBPay QR">
-            <p class="note" id="cbNote"></p>
-          </div>
-          <div class="card inset">
-            <h3>AYAPay</h3>
-            <img id="qrAYA" class="qr" alt="AYAPay QR">
-            <p class="note" id="ayaNote"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="records" class="section">
-    <div class="wrap">
-      <div class="card gradient">
-        <h2>နှစ်စဉ်မှတ်တမ်း</h2>
-        <p class="muted nonadmin-note">Admin မပါလျှင် ဖတ်ရုံသာ — cloud တွင် သိမ်းထားသော data များကို မည်သည့် device မှ မဆို ပြပေးသည်။</p>
-      </div>
-      <div class="row toolbar">
-        <input id="recYear" type="number" placeholder="Year e.g. 2025">
-        <input id="recQuery" type="search" placeholder="အမည် / ဖုန်း / Email ရိုက်ရှာ">
-        <button class="btn" onclick="searchRecords()">Search</button>
-        <button class="btn" onclick="exportRecordsCSV()">Export Excel</button>
-        <button class="btn" onclick="exportRecordsPDF()">Export PDF</button>
-      </div>
-      <div id="recGrid" class="grid cards"></div>
-      <div id="recEmpty" class="empty">Admin အတွက်သာ…</div>
-    </div>
-  </section>
-
-  <section id="admin" class="section" style="display:none">
-    <div class="wrap">
-      <div class="grid two">
-        <div class="card inset">
-          <h3>ပို့စ်အသစ်တင်ရန် (Raw HTML အပါအဝင်)</h3>
-          <form id="postForm" onsubmit="createPost(event)">
-            <input id="pTitle" required placeholder="ခေါင်းစဉ်">
-            <label class="row" style="gap:8px">
-              <input id="pAllowHTML" type="checkbox" checked> <span class="note">Allow raw HTML</span>
-            </label>
-            <div id="blocks" class="blocks"></div>
-            <div class="row wrap gap">
-              <button class="btn" type="button" onclick="addBlock('text')">＋ Text/HTML</button>
-              <button class="btn" type="button" onclick="addBlock('image')">＋ Image</button>
-              <button class="btn" type="button" onclick="addBlock('video')">＋ Video</button>
-              <button class="btn" type="button" onclick="addBlock('audio')">＋ Audio</button>
+      <!-- Events -->
+      <section id="events" class="section">
+        <div class="wrap">
+          <div class="row toolbar">
+            <h2 class="title">အခါကြီး/ရက်ကြီးများ</h2>
+            <div class="space"></div>
+            <div class="row month-nav">
+              <button class="btn" onclick="prevMonth()">←</button>
+              <div id="monthLabel" class="pill"></div>
+              <button class="btn" onclick="nextMonth()">→</button>
             </div>
-            <div class="row gap mt">
-              <button class="btn primary" type="submit">Publish</button>
-              <button class="btn" type="button" onclick="seedDemo()">Load Sample Data</button>
-              <span id="postMsg" class="note"></span>
-            </div>
-          </form>
+          </div>
+          <div id="eventUpcoming" class="list"></div>
+          <h3 class="mt">ဤလ (Admin များအတွက် အကွက်တိုင်း စာရေးနိုင်)</h3>
+          <div id="cal" class="calendar"></div>
         </div>
+      </section>
 
-        <!-- Admin → Donations -->
-<div class="card inset donate-admin fancy">
-  <div class="head row">
-    <h3 class="section-title">Donations (KBZPay • CBPay • AYAPay)</h3>
-    <div class="space"></div>
-    <button class="btn primary soft" onclick="saveDonation()">💾 Save</button>
-  </div>
-  <p class="subtle">* ဆောင်ရွက်ပြီးလျှင် Donate page မှာ Public ပြသမည်</p>
+      <!-- Donate -->
+      <section id="donate" class="section">
+        <div class="wrap">
+          <div class="card">
+            <h2 class="row">
+              Donations <span class="badge">KBZPay • CBPay • AYAPay</span>
+            </h2>
+            <div class="grid three">
+              <div class="card inset">
+                <h3>KBZPay</h3>
+                <img id="qrKBZ" class="qr" alt="KBZPay QR" />
+                <p class="note" id="kbzNote"></p>
+              </div>
+              <div class="card inset">
+                <h3>CBPay</h3>
+                <img id="qrCB" class="qr" alt="CBPay QR" />
+                <p class="note" id="cbNote"></p>
+              </div>
+              <div class="card inset">
+                <h3>AYAPay</h3>
+                <img id="qrAYA" class="qr" alt="AYAPay QR" />
+                <p class="note" id="ayaNote"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-  <div class="donate-rows">
-    <!-- KBZ Group -->
-    <div class="donate-box tone-kbz">
-      <div class="ribbon"></div>
-      <label class="lbl">KBZPay note</label>
-      <input id="kbzNoteIn" placeholder="BuddhaCollege">
-      <label class="file qrfile">
-        <span>Upload KBZ QR</span>
-        <input id="kbzQR" type="file" accept="image/*">
-      </label>
-    </div>
+      <!-- Records -->
+      <section id="records" class="section">
+        <div class="wrap">
+          <div class="card gradient">
+            <h2>နှစ်စဉ်မှတ်တမ်း</h2>
+            <p class="muted nonadmin-note">
+              Admin မပါလျှင် ဖတ်ရုံသာ — cloud တွင် သိမ်းထားသော data များကို
+              မည်သည့် device မှ မဆို ပြပေးသည်။
+            </p>
+          </div>
+          <div class="row toolbar">
+            <input id="recYear" type="number" placeholder="Year e.g. 2025" />
+            <input
+              id="recQuery"
+              type="search"
+              placeholder="အမည် / ဖုန်း / Email ရိုက်ရှာ"
+            />
+            <button class="btn" onclick="searchRecords()">Search</button>
+            <button class="btn" onclick="exportRecordsCSV()">
+              Export Excel
+            </button>
+            <button class="btn" onclick="exportRecordsPDF()">Export PDF</button>
+          </div>
+          <div id="recGrid" class="grid cards"></div>
+          <div id="recEmpty" class="empty">Admin အတွက်သာ…</div>
+        </div>
+      </section>
 
-    <!-- CB Group -->
-    <div class="donate-box tone-cb">
-      <div class="ribbon"></div>
-      <label class="lbl">CBPay note</label>
-      <input id="cbNoteIn" placeholder="BuddhaCollege">
-      <label class="file qrfile">
-        <span>Upload CB QR</span>
-        <input id="cbQR" type="file" accept="image/*">
-      </label>
-    </div>
-
-    <!-- AYA Group -->
-    <div class="donate-box tone-aya">
-      <div class="ribbon"></div>
-      <label class="lbl">AYAPay note</label>
-      <input id="ayaNoteIn" placeholder="BuddhaCollege">
-      <label class="file qrfile">
-        <span>Upload AYA QR</span>
-        <input id="ayaQR" type="file" accept="image/*">
-      </label>
-    </div>
-  </div>
-</div>
-
-<!-- ===== Admin: Manage Posts (Search / Edit / Delete / Duplicate) ===== -->
-<div class="card">
-  <div class="row" style="align-items:center; gap:12px;">
-    <h3 style="margin:0">Manage Posts</h3>
-    <span class="pill">Admin only</span>
-  </div>
-
-  <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
-    <input id="admPostQuery" placeholder="Search by title or text…" style="flex:1; min-width:220px;">
-    <select id="admPostYear" style="width:140px">
-      <option value="">All Years</option>
-      <!-- year options will be filled by JS if you want; optional -->
-    </select>
-    <button class="btn" onclick="adminSearchPosts()">Search</button>
-    <button class="btn subtle" onclick="adminClearSearch()">Clear</button>
-  </div>
-
-  <div id="adminPostList" class="stack" style="margin-top:12px;"></div>
-  <div id="adminPostEmpty" class="empty" style="display:none">No posts found…</div>
-</div>
-
-      <div class="card inset">
-        <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန်</h3>
-        <form id="recForm" onsubmit="saveRecord(event)">
+      <!-- Admin -->
+      <section id="admin" class="section" style="display: none">
+        <div class="wrap">
           <div class="grid two">
-            <input id="rYear"   type="number" required placeholder="Year">
-            <input id="rName"   required placeholder="အမည်">
-            <input id="rAge"    type="number" placeholder="အသက်">
-            <input id="rVow"    placeholder="ဝါတော်">
-            <input id="rNRC"    placeholder="မှတ်ပုံတင်">
-            <input id="rMother" placeholder="အမိအမည်">
-            <input id="rFather" placeholder="အဖအမည်">
-            <input id="rAddr"   placeholder="ယခင်နေရပ်လိပ်စာ">
-            <input id="rEdu"    placeholder="ပညာအရည်အချင်း">
-            <input id="rRole"   placeholder="လက်ရှိရာထူး">
-            <input id="rPhone"  placeholder="ဖုန်း">
-            <input id="rEmail"  type="email" placeholder="Email">
-            <label class="file"><span>ဓာတ်ပုံ</span><input id="rPhoto" type="file" accept="image/*"></label>
+            <div class="card inset">
+              <h3>ပို့စ်အသစ်တင်ရန် (Raw HTML အပါအဝင်)</h3>
+              <form id="postForm" onsubmit="createPost(event)">
+                <input id="pTitle" required placeholder="ခေါင်းစဉ်" />
+                <label class="row" style="gap: 8px">
+                  <input id="pAllowHTML" type="checkbox" checked />
+                  <span class="note">Allow raw HTML</span>
+                </label>
+                <div id="blocks" class="blocks"></div>
+                <div class="row wrap gap">
+                  <button class="btn" type="button" onclick="addBlock('text')">
+                    ＋ Text/HTML
+                  </button>
+                  <button class="btn" type="button" onclick="addBlock('image')">
+                    ＋ Image
+                  </button>
+                  <button class="btn" type="button" onclick="addBlock('video')">
+                    ＋ Video
+                  </button>
+                  <button class="btn" type="button" onclick="addBlock('audio')">
+                    ＋ Audio
+                  </button>
+                </div>
+                <div class="row gap mt">
+                  <button class="btn primary" type="submit">Publish</button>
+                  <button class="btn" type="button" onclick="seedDemo()">
+                    Load Sample Data
+                  </button>
+                  <span id="postMsg" class="note"></span>
+                </div>
+              </form>
+            </div>
+
+            <!-- Admin → Donations -->
+            <div class="card inset donate-admin fancy">
+              <div class="head row">
+                <h3 class="section-title">
+                  Donations (KBZPay • CBPay • AYAPay)
+                </h3>
+                <div class="space"></div>
+                <button class="btn primary soft" onclick="saveDonation()">
+                  💾 Save
+                </button>
+              </div>
+              <p class="subtle">
+                * ဆောင်ရွက်ပြီးလျှင် Donate page မှာ Public ပြသမည်
+              </p>
+
+              <div class="donate-rows">
+                <!-- KBZ Group -->
+                <div class="donate-box tone-kbz">
+                  <div class="ribbon"></div>
+                  <label class="lbl">KBZPay note</label>
+                  <input id="kbzNoteIn" placeholder="BuddhaCollege" />
+                  <label class="file qrfile">
+                    <span>Upload KBZ QR</span>
+                    <input id="kbzQR" type="file" accept="image/*" />
+                  </label>
+                </div>
+
+                <!-- CB Group -->
+                <div class="donate-box tone-cb">
+                  <div class="ribbon"></div>
+                  <label class="lbl">CBPay note</label>
+                  <input id="cbNoteIn" placeholder="BuddhaCollege" />
+                  <label class="file qrfile">
+                    <span>Upload CB QR</span>
+                    <input id="cbQR" type="file" accept="image/*" />
+                  </label>
+                </div>
+
+                <!-- AYA Group -->
+                <div class="donate-box tone-aya">
+                  <div class="ribbon"></div>
+                  <label class="lbl">AYAPay note</label>
+                  <input id="ayaNoteIn" placeholder="BuddhaCollege" />
+                  <label class="file qrfile">
+                    <span>Upload AYA QR</span>
+                    <input id="ayaQR" type="file" accept="image/*" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Admin Manage Posts -->
+            <div class="card">
+              <div class="row" style="align-items: center; gap: 12px">
+                <h3 style="margin: 0">Manage Posts</h3>
+                <span class="pill">Admin only</span>
+              </div>
+
+              <div
+                class="row"
+                style="gap: 8px; margin-top: 12px; flex-wrap: wrap"
+              >
+                <input
+                  id="admPostQuery"
+                  placeholder="Search by title or text…"
+                  style="flex: 1; min-width: 220px"
+                />
+                <select id="admPostYear" style="width: 140px">
+                  <option value="">All Years</option>
+                </select>
+                <button class="btn" onclick="adminSearchPosts()">Search</button>
+                <button class="btn subtle" onclick="adminClearSearch()">
+                  Clear
+                </button>
+              </div>
+
+              <div
+                id="adminPostList"
+                class="stack"
+                style="margin-top: 12px"
+              ></div>
+              <div id="adminPostEmpty" class="empty" style="display: none">
+                No posts found…
+              </div>
+            </div>
+
+            <div class="card inset">
+              <h3>နှစ်စဉ် မှတ်တမ်းတင်ရန်</h3>
+              <form id="recForm" onsubmit="saveRecord(event)">
+                <div class="grid two">
+                  <input id="rYear" type="number" required placeholder="Year" />
+                  <input id="rName" required placeholder="အမည်" />
+                  <input id="rAge" type="number" placeholder="အသက်" />
+                  <input id="rVow" placeholder="ဝါတော်" />
+                  <input id="rNRC" placeholder="မှတ်ပုံတင်" />
+                  <input id="rMother" placeholder="အမိအမည်" />
+                  <input id="rFather" placeholder="အဖအမည်" />
+                  <input id="rAddr" placeholder="ယခင်နေရပ်လိပ်စာ" />
+                  <input id="rEdu" placeholder="ပညာအရည်အချင်း" />
+                  <input id="rRole" placeholder="လက်ရှိရာထူး" />
+                  <input id="rPhone" placeholder="ဖုန်း" />
+                  <input id="rEmail" type="email" placeholder="Email" />
+                  <label class="file"
+                    ><span>ဓာတ်ပုံ</span
+                    ><input id="rPhoto" type="file" accept="image/*"
+                  /></label>
+                </div>
+                <div class="row gap mt">
+                  <button class="btn primary" type="submit">Save Record</button>
+                  <span id="recMsg" class="note"></span>
+                </div>
+              </form>
+            </div>
           </div>
-          <div class="row gap mt">
-            <button class="btn primary" type="submit">Save Record</button>
-            <span id="recMsg" class="note"></span>
-          </div>
-        </form>
+          <!-- /.grid two -->
+        </div>
+        <!-- /.wrap -->
+      </section>
+    </main>
+
+    <!-- Global media zoom modal (outside sections is fine) -->
+    <div id="mediaModal" class="media-modal hidden" onclick="closeMediaZoom()">
+      <img id="zoomImg" class="hidden" alt="" />
+      <video id="zoomVid" controls class="hidden"></video>
+      <audio id="zoomAud" controls class="hidden"></audio>
+    </div>
+
+    <!-- Single footer at the end -->
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <nav class="footer-links" aria-label="Site">
+          <a href="#home" class="f-link">Home</a>
+          <a href="https://openlearn-mm.web.app/" class="f-link">OpenLearn</a>
+          <a href="https://foodfinder-mm.web.app/" class="f-link">FoodFinder</a>
+          <a
+            href="https://www.digitalpalireader.online/_dprhtml/index.html"
+            class="f-link"
+            >DPR</a
+          >
+          <a href="https://tmf-mm.web.app/" class="f-link">TMF</a>
+        </nav>
+
+        <div class="footer-social" aria-label="Social">
+          <a
+            class="s-btn"
+            href="https://facebook.com/YOUR_PAGE"
+            target="_blank"
+            rel="noopener"
+            aria-label="Facebook"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M22 12.06C22 6.49 17.52 2 12 2S2 6.49 2 12.06c0 5.01 3.66 9.17 8.44 9.94v-7.03H7.9v-2.91h2.54V9.41c0-2.5 1.49-3.88 3.76-3.88 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.91h-2.34V22c4.78-.77 8.44-4.93 8.44-9.94z"
+              />
+            </svg>
+          </a>
+          <a
+            class="s-btn"
+            href="https://youtube.com/@YOUR_CHANNEL"
+            target="_blank"
+            rel="noopener"
+            aria-label="YouTube"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M23.5 6.2a3.1 3.1 0 0 0-2.2-2.2C19.3 3.5 12 3.5 12 3.5s-7.3 0-9.3.5A3.1 3.1 0 0 0 .5 6.2 32.3 32.3 0 0 0 0 12a32.3 32.3 0 0 0 .5 5.8 3.1 3.1 0 0 0 2.2 2.2c2 .5 9.3.5 9.3.5s7.3 0 9.3-.5a3.1 3.1 0 0 0 2.2-2.2A32.3 32.3 0 0 0 24 12a32.3 32.3 0 0 0-.5-5.8zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"
+              />
+            </svg>
+          </a>
+          <a
+            class="s-btn"
+            href="https://t.me/YOUR_CHANNEL"
+            target="_blank"
+            rel="noopener"
+            aria-label="Telegram"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9.04 15.3 8.9 19.5c.3 0 .44-.14.6-.3l2.88-2.78 5.98 4.35c1.1.6 1.9.28 2.2-1.02l3.98-18.7h0c.36-1.68-.6-2.34-1.68-1.94L1.7 8.73C.06 9.37.08 10.33 1.4 10.74l5.3 1.65L19.2 5.7c.6-.38 1.15-.17.7.22L9.04 15.3z"
+              />
+            </svg>
+          </a>
+          <a
+            class="s-btn"
+            href="viber://pa?chatURI=YOUR_VIBER"
+            target="_blank"
+            rel="noopener"
+            aria-label="Viber"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M17.5 2C20 2 22 4 22 6.5v11C22 20 20 22 17.5 22h-11C4 22 2 20 2 17.5v-11C2 4 4 2 6.5 2h11zM7.7 7.1c-.3 0-.5.2-.5.5 0 4.2 3.4 7.5 7.5 7.5.3 0 .5-.2.5-.5V13c0-.3-.2-.5-.5-.5-1 0-2-.3-2.7-.9l-.7.7c-.5.5-1.3.6-1.9.2-.9-.6-1.7-1.4-2.3-2.3-.4-.6-.3-1.4.2-1.9l.7-.7c-.5-.7-.8-1.7-.8-2.7 0-.3-.2-.5-.5-.5H7.7z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <small
+          >© <span id="year"></span> BuddhaCollege • All rights reserved.</small
+        >
+      </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" onclick="closeLogin()"></div>
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="loginTitle"
+      >
+        <div class="row">
+          <h3 id="loginTitle">Admin Sign in</h3>
+          <div class="space"></div>
+          <button class="btn sm" onclick="closeLogin()">✕</button>
+        </div>
+        <input
+          id="mEmail"
+          type="email"
+          placeholder="admin email"
+          autocomplete="username"
+        />
+        <input
+          id="mPass"
+          type="password"
+          placeholder="password"
+          autocomplete="current-password"
+          onkeydown="if(event.key==='Enter'){loginModal()}"
+        />
+        <div class="row">
+          <button class="btn primary" onclick="loginModal()">Sign in</button>
+        </div>
+        <p class="note small">အားလုံးကိုယ်စိတ်နှစ်ဖြာ အေးချမ်းကြပါစေ</p>
       </div>
     </div>
-  </section>
 
-  <div id="loginModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop" onclick="closeLogin()"></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-      <div class="row">
-        <h3 id="loginTitle">Admin Sign in</h3>
-        <div class="space"></div>
-        <button class="btn sm" onclick="closeLogin()">✕</button>
-      </div>
-      <input id="mEmail" type="email" placeholder="admin email" autocomplete="username">
-      <input id="mPass" type="password" placeholder="password" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter'){loginModal()}">
-      <div class="row">
-        <button class="btn primary" onclick="loginModal()">Sign in</button>
-      </div>
-      <p class="note small">အားလုံးကိုယ်စိတ်နှစ်ဖြာ အေးချမ်းကြပါစေ</p>
-    </div>
-  </div>
-
-  <footer class="footer">© <span id="year"></span> BuddhaCollege • MM</footer>
-
-  <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./app.js"></script>
-  <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('sw.js')
-      .then(function(reg){ console.log('SW registered', reg.scope); })
-      .catch(function(err){ console.warn('SW registration failed', err); });
-  });
-}
-</script>
-  <!-- <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-    }
-  </script> -->
-</body>
+    <!-- Scripts -->
+    <script type="module" src="./firebase.js"></script>
+    <script type="module" src="./app.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("sw.js")
+            .then(function (reg) {
+              console.log("SW registered", reg.scope);
+            })
+            .catch(function (err) {
+              console.warn("SW registration failed", err);
+            });
+        });
+      }
+    </script>
+  </body>
 </html>

@@ -409,12 +409,15 @@ function renderBlocks(arr) {
 
   function flushGallery() {
     if (!gallery.length) return;
+    // chunk rows (max 3 per row)
     let i = 0, rows = [];
     while (i < gallery.length) { rows.push(gallery.slice(i, i + 3)); i += 3; }
     const html = rows.map(row => {
       const cols = row.length;
       const items = row.map(url =>
-        `<img src="${url}" alt="" onclick="openMediaZoom('img','${url}')" onload="markPortrait(this)">`
+        `<div class="cell">
+           <img src="${url}" alt="" onclick="openMediaZoom('img','${url}')" onload="markPortrait(this)">
+         </div>`
       ).join('');
       return `<div class="gallery-row cols-${cols}">${items}</div>`;
     }).join('');
@@ -452,10 +455,12 @@ window.markPortrait = function(imgEl){
   try{
     const w = imgEl.naturalWidth || imgEl.width;
     const h = imgEl.naturalHeight || imgEl.height;
-    if (h > w * 1.05) { // portrait-ish
-      imgEl.classList.add('portrait');
+    const cell = imgEl.closest('.cell');
+    if (!cell) return;
+    if (h > w * 1.05) {             // portrait-ish
+      cell.classList.add('portrait');
     } else {
-      imgEl.classList.remove('portrait');
+      cell.classList.remove('portrait');
     }
   }catch(e){}
 };
