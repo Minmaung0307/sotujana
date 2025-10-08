@@ -93,10 +93,17 @@ window.loginModal = async () => {
 };
 
 let isAdmin = false;
-async function checkAdmin(u) {
-  if (!u) return false;
-  const snap = await getDoc(doc(db, "admins", u.uid));
-  return snap.exists();
+// Firestore မှ Admin စစ်တဲ့ function
+async function checkAdmin(user) {
+  if (!user) return false;
+  try {
+    const ref = doc(db, "admins", user.uid);
+    const snap = await getDoc(ref);
+    return snap.exists(); // admin collection ထဲမှာ UID ရှိရင် true
+  } catch (e) {
+    console.warn("Admin check failed:", e);
+    return false;
+  }
 }
 async function updateAuthUI(u) {
   const pill = document.getElementById("authState");
@@ -197,16 +204,18 @@ async function loadPublic(){
 }
 
 // ဤနေရာမှာ သင့် admin uid(s) သတ်မှတ် – later: custom claims သုံးနိုင်
-const ADMIN_UIDS = ["eKTVqRMbmkhabnUMJrHTWahFEzz2","QAAuXY0jRTd8V8fbmx7H0ThfNYh1", "F6bqlHr0MTYR0ffjE0Ukc6oGijF2", "y3LokhTkpQb9ozItk6YGUJ7L54r2", "hHFkjpSf7MZ293hoRJF3t5EyJ982"];
+// const ADMIN_UIDS = ["eKTVqRMbmkhabnUMJrHTWahFEzz2","QAAuXY0jRTd8V8fbmx7H0ThfNYh1", "F6bqlHr0MTYR0ffjE0Ukc6oGijF2", "y3LokhTkpQb9ozItk6YGUJ7L54r2", "hHFkjpSf7MZ293hoRJF3t5EyJ982"];
 
-onAuthStateChanged(auth, (user)=>{
-  const isAdmin = !!user && ADMIN_UIDS.includes(user.uid);
-  applyGuards(isAdmin);
-  loadPublic(); // guest/admin အတွက် မရှိမဖြစ် ခေါ်
+// Auth change ဖြစ်တိုင်း စစ်
+onAuthStateChanged(auth, async (user) => {
+  const isAdmin = await checkAdmin(user); // ⬅️ ဒီလိုပြောင်း
+  applyGuards(isAdmin); // UI Guard (admin/guest toggle)
+  loadPublic();          // Home / Events / Donate လို public pages
 
-  // Admin-only things lazy load
   if (isAdmin) {
-    // e.g. loadAdminDrafts(); loadRecordsAdmin(); …
+    // Admin-only loaders
+    // loadRecordsAdmin();
+    // loadDrafts();
   }
 });
 
