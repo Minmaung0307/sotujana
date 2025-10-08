@@ -27,9 +27,9 @@
     <header class="topbar shadow">
       <div class="row">
         <!-- <div class="brand">BuddhaCollege</div> -->
-         <div class="brand">
-  <img src="icons/logo.png" alt="BuddhaCollege Logo" class="logo">
-</div>
+        <div class="brand">
+          <img src="icons/logo.png" alt="BuddhaCollege Logo" class="logo" />
+        </div>
         <div class="space"></div>
         <span id="authState" class="pill">Guest</span>
         <button id="btnTopSignIn" class="btn sm" onclick="openLogin()">
@@ -48,7 +48,11 @@
       </button>
       <button data-tab="events" onclick="tab(this,'events')">📅 Events</button>
       <button data-tab="donate" onclick="tab(this,'donate')">🙏 Donate</button>
-      <button data-tab="records" data-guard="admin" onclick="tab(this,'records')">
+      <button
+        data-tab="records"
+        data-guard="admin"
+        onclick="tab(this,'records')"
+      >
         📘 Records
       </button>
       <button
@@ -56,7 +60,8 @@
         id="btnTabAdmin"
         onclick="tab(this,'admin')"
         style="display: none"
-        data-nav="admin" data-guard="admin"
+        data-nav="admin"
+        data-guard="admin"
       >
         🔐 Admin
       </button>
@@ -186,7 +191,12 @@
       </section>
 
       <!-- Admin -->
-      <section id="admin" data-guard="admin" class="section" style="display: none">
+      <section
+        id="admin"
+        data-guard="admin"
+        class="section"
+        style="display: none"
+      >
         <div class="wrap">
           <div class="grid two">
             <div class="card inset">
@@ -269,6 +279,67 @@
                     <span>Upload AYA QR</span>
                     <input id="ayaQR" type="file" accept="image/*" />
                   </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Admin → Add Event -->
+            <div class="card inset event-admin">
+              <div class="head row">
+                <h3 class="section-title">အခါကြီး/ရက်ကြီး သွင်းရန်</h3>
+                <div class="space"></div>
+                <button class="btn primary soft" form="evForm">💾 Save</button>
+              </div>
+              <p class="subtle">
+                သတ်မှတ်ထားတဲ့ရက်စွဲပြီးနောက် အပေါ်ဘက် Events page မှာ Public
+                ပြသမည်
+              </p>
+
+              <form id="evForm" onsubmit="createEvent(event)">
+                <div class="grid two">
+                  <input
+                    id="evTitle"
+                    required
+                    placeholder="ခေါင်းစဉ် (e.g. သီတဂူ ဆွမ်းဆပ်ပွဲ)"
+                  />
+                  <input id="evDate" type="date" required />
+                  <textarea
+                    id="evDesc"
+                    rows="3"
+                    placeholder="အသေးစိတ် (လိုအပ်လျှင်)"
+                  ></textarea>
+
+                  <!-- Image upload -->
+                  <label class="file">
+                    <span>Event Cover (optional)</span>
+                    <input id="evImg" type="file" accept="image/*" />
+                  </label>
+
+                  <!-- Preview (optional) -->
+                  <div class="ev-preview" id="evPreview" style="display: none">
+                    <img id="evPreviewImg" alt="preview" />
+                  </div>
+                </div>
+
+                <div class="row gap mt">
+                  <button class="btn primary" type="submit">Save Event</button>
+                  <button
+                    class="btn subtle"
+                    type="button"
+                    onclick="resetEventForm()"
+                  >
+                    Clear
+                  </button>
+                  <span id="evMsg" class="note"></span>
+                </div>
+              </form>
+
+              <!-- (optional) recent events for quick manage -->
+              <div class="stack mt">
+                <h4 style="margin: 0">နီးစပ်ရာ Events (admin)</h4>
+                <div id="evAdminList" class="stack"></div>
+                <div id="evAdminEmpty" class="empty" style="display: none">
+                  No events…
                 </div>
               </div>
             </div>

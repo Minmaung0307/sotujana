@@ -1409,3 +1409,149 @@ window.closeMediaZoom = function(){
   if(vid) { vid.pause(); vid.removeAttribute('src'); vid.load(); }
   if(aud) { aud.pause(); aud.removeAttribute('src'); aud.load(); }
 };
+
+// === Events: create / list / delete ===
+
+// Image preview (optional)
+(function () {
+  const inp = document.getElementById('evImg');
+  if (!inp) return;
+  inp.addEventListener('change', () => {
+    const f = inp.files && inp.files[0];
+    const box = document.getElementById('evPreview');
+    const img = document.getElementById('evPreviewImg');
+    if (f) {
+      img.src = URL.createObjectURL(f);
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+      img.removeAttribute('src');
+    }
+  });
+})();
+
+// Save (Admin only)
+window.createEvent = async (ev) => {
+  ev.preventDefault();
+  try {
+    if (!auth.currentUser || !isAdmin) return alert('Admin only');
+
+    const title = document.getElementById('evTitle').value.trim();
+    const date  = document.getElementById('evDate').value; // yyyy-mm-dd
+    const desc  = document.getElementById('evDesc').value.trim();
+    const img   = document.getElementById('evImg').files[0];
+
+    if (!title || !date) return alert('ခေါင်းစဉ် / ရက်စွဲ ဖြည့်ပါ');
+
+    let imageUrl = '';
+    if (img) {
+      const path = `events/${Date.now()}-${img.name}`;
+      const r = sref(st, path);
+      await uploadBytes(r, img);
+      imageUrl = await getDownloadURL(r);
+    }
+
+    await addDoc(collection(db, 'events'), {
+      title,
+      date,      // string: "2025-12-08"
+      desc,
+      image: imageUrl || '',
+      createdAt: Date.now()
+    });
+
+    document.getElementById('evMsg').textContent = '✔ Event saved';
+    resetEventForm();
+    // Public UI refresh
+    if (typeof loadEvents === 'function') loadEvents();
+    // Admin list refresh
+    if (typeof loadAdminEvents === 'function') loadAdminEvents();
+    setTimeout(() => document.getElementById('evMsg').textContent = '', 1500);
+  } catch (e) {
+    console.error(e);
+    alert('Save event failed: ' + e.message);
+  }
+};
+
+window.resetEventForm = () => {
+  const f = document.getElementById('evForm');
+  if (f) f.reset();
+  const box = document.getElementById('evPreview');
+  const img = document.getElementById('evPreviewImg');
+  if (box && img) { box.style.display = 'none'; img.removeAttribute('src'); }
+};
+
+// Admin-side quick list (upcoming 10)
+window.loadAdminEvents = async () => {
+  if (!isAdmin) return;
+  const host = document.getElementById('evAdminList');
+  const empty = document.getElementById('evAdminEmpty');
+  if (!host) return;
+  host.innerHTML = '';
+
+  const today = new Date().toISOString().slice(0,10);
+  const qy = query(
+    collection(db, 'events'),
+    where('date', '>=', today),
+    orderBy('date', 'asc'),
+    limit(10)
+  );
+  const snap = await getDocs(qy);
+  let n = 0;
+  snap.forEach(d => {
+    n++;
+    const x = { id: d.id, ...d.data() };
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.style.gap = '8px';
+    div.style.alignItems = 'center';
+    div.innerHTML = `
+      <span class="pill">${x.date}</span>
+      <strong>${escapeHTML(x.title || '')}</strong>
+      <div class="space"></div>
+      <button class="btn small danger" onclick="deleteEvent('${x.id}')">🗑 Delete</button>
+    `;
+    host.appendChild(div);
+  });
+  if (empty) empty.style.display = n ? 'none' : 'block';
+};
+
+// Delete (Admin)
+window.deleteEvent = async (id) => {
+  if (!auth.currentUser || !isAdmin) return alert('Admin only');
+  if (!confirm('Delete this event?')) return;
+  await deleteDoc(doc(db, 'events', id));
+  if (typeof loadEvents === 'function') loadEvents();
+  if (typeof loadAdminEvents === 'function') loadAdminEvents();
+};
+
+// Public loader (Events page) — အကယ်၍ မရှိသေးရင် သုံးပါ
+window.loadEvents = async () => {
+  const host = document.getElementById('eventsList');
+  const empty = document.getElementById('eventsEmpty'); // "No upcoming events" အတွက်
+  if (!host) return;
+  host.innerHTML = '';
+
+  const today = new Date().toISOString().slice(0,10);
+  const qy = query(
+    collection(db, 'events'),
+    where('date', '>=', today),
+    orderBy('date', 'asc'),
+    limit(50)
+  );
+  const snap = await getDocs(qy);
+  let n = 0;
+  snap.forEach(d => {
+    n++;
+    const x = d.data();
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      ${x.image ? `<div class="post-media"><img src="${x.image}" alt=""></div>` : ''}
+      <h3>${escapeHTML(x.title || '')}</h3>
+      <div class="muted">📅 ${x.date}</div>
+      ${x.desc ? `<p style="margin-top:6px">${escapeHTML(x.desc)}</p>` : ''}
+    `;
+    host.appendChild(card);
+  });
+  if (empty) empty.style.display = n ? 'none' : 'block';
+};

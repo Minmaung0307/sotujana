@@ -772,3 +772,17 @@ html[data-theme="rose"] {
   border-radius: 8px;
   object-fit: contain;
 }
+
+.event-admin .ev-preview {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border, #dbe2ea);
+  border-radius: 12px;
+  padding: 8px;
+}
+.event-admin .ev-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
+}
