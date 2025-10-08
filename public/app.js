@@ -407,36 +407,33 @@ function renderBlocks(arr) {
   return (arr || [])
     .map(function (b) {
       if (b.type === "text") {
-        if (b.allowHTML) {
-          return (
-            '<div style="white-space:pre-wrap">' +
-            safeHTML(b.text || "") +
-            "</div>"
-          );
-        }
-        return (
-          '<div style="white-space:pre-wrap">' +
-          escapeHTML(b.text || "") +
-          "</div>"
-        );
+        const txt = b.allowHTML ? safeHTML(b.text || "") : escapeHTML(b.text || "");
+        return `<div style="white-space:pre-wrap">${txt}</div>`;
       }
+
       if (b.type === "image") {
-        return '<div class="post-media"><img src="' + b.url + '" alt=""></div>';
+        // preview ကို သေးသေးပြမယ်, click → zoom modal
+        return `<div class="media-wrap">
+                  <img src="${b.url}" alt="" onclick="openMediaZoom('img','${b.url}')">
+                </div>`;
       }
+
       if (b.type === "video") {
-        return (
-          '<div class="post-media"><video src="' +
-          b.url +
-          '" controls></video></div>'
-        );
+        // preview ကို control မပေးဘဲ သေးသေးပြ—နှိပ်ရင် zoom modal (controls ရှိ)
+        return `<div class="media-wrap">
+                  <video src="${b.url}" muted playsinline preload="metadata"
+                         onclick="openMediaZoom('video','${b.url}')"></video>
+                </div>`;
       }
+
       if (b.type === "audio") {
-        return (
-          '<div class="post-media"><audio src="' +
-          b.url +
-          '" controls></audio></div>'
-        );
+        // audio ကို preview မှာ controls ပါ—zoom view မှာလည်းကြီးစီးပြ
+        return `<div class="media-wrap">
+                  <audio src="${b.url}" controls preload="metadata"
+                         onclick="openMediaZoom('audio','${b.url}')"></audio>
+                </div>`;
       }
+
       return "";
     })
     .join("");
@@ -1177,4 +1174,33 @@ window.editPost = async function (id) {
   if (idEl) idEl.value = id;
   show("admin");
   window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+// === Media zoom handling ===
+window.openMediaZoom = function(type, src){
+  const modal = document.getElementById('mediaModal');
+  const img = document.getElementById('zoomImg');
+  const vid = document.getElementById('zoomVid');
+  const aud = document.getElementById('zoomAud');
+
+  img.classList.add('hidden');
+  vid.classList.add('hidden');
+  aud.classList.add('hidden');
+
+  modal.classList.remove('hidden');
+  if(type === 'img'){
+    img.src = src;
+    img.classList.remove('hidden');
+  }else if(type === 'video'){
+    vid.src = src;
+    vid.classList.remove('hidden');
+  }else if(type === 'audio'){
+    aud.src = src;
+    aud.classList.remove('hidden');
+  }
+};
+
+window.closeMediaZoom = function(){
+  const modal = document.getElementById('mediaModal');
+  modal.classList.add('hidden');
 };
