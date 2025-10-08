@@ -1080,52 +1080,65 @@ window.searchRecords = async () => {
     .toLowerCase()
     .trim();
   if (!y) return alert("Enter year");
+
   const host = document.getElementById("recGrid");
   if (!host) return;
   host.innerHTML = "";
-  const snap = await getDocs(
-    query(collection(db, "records"), where("y", "==", y))
-  );
+
+  const snap = await getDocs(query(collection(db, "records"), where("y", "==", y)));
   let n = 0;
+
   snap.forEach((d) => {
     const x = { id: d.id, ...d.data() };
+
+    // search haystack
     const hay = [x.name, x.phone, x.email, x.addr || "", x.vow || ""]
       .map((v) => (v || "").toLowerCase())
       .join(" ");
     if (qtext && !hay.includes(qtext)) return;
+
     n++;
+
+    // photo box (ရှိရင်ပုံ၊ မရှိရင် empty UI) — “ဓာတ်ပုံ” စာသားမထည့်တော့
     const img = x.photo
-      ? `<div class="rec-photo-box"><img class="rec-photo" src="${
-          x.photo
-        }" alt="${x.name || ""}"></div>`
+      ? `<div class="rec-photo-box"><img class="rec-photo" src="${x.photo}" alt="${x.name || ""}"></div>`
       : `<div class="rec-photo-box empty">No Photo</div>`;
+
+    // Contact/Email အတို — တစ်ကြောင်းပဲပြ
+    const contact = [
+      x.phone ? `☎ ${x.phone}` : "",
+      x.email ? `✉ ${x.email}` : "",
+    ]
+      .filter(Boolean)
+      .join(" / ");
+
     const item = document.createElement("div");
     item.className = "card";
-    item.innerHTML = `${img}
+    item.innerHTML = `
+      ${img}
       <ol style="padding-left:18px;margin:0">
-        // <li>ဓာတ်ပုံ</li>
         <li><strong>နာမည်</strong> — ${x.name || "-"}</li>
         <li><strong>အသက်</strong> — ${x.age || "-"}</li>
         <li><strong>ဝါတော်</strong> — ${x.vow || "-"}</li>
         <li><strong>မှတ်ပုံတင်</strong> — ${x.nrc || "-"}</li>
-        <li><strong>မိဘအမည်</strong> — ${
-          [x.mother, x.father].filter(Boolean).join(" / ") || "-"
-        }</li>
+        <li><strong>မိဘအမည်</strong> — ${( [x.mother, x.father].filter(Boolean).join(" / ") ) || "-"}</li>
         <li><strong>ယခင်နေရပ်လိပ်စာ</strong> — ${x.addr || "-"}</li>
         <li><strong>ပညာအရည်အချင်း</strong> — ${x.edu || "-"}</li>
         <li><strong>လက်ရှိရာထူး</strong> — ${x.role || "-"}</li>
-        <li><strong>Contact:</strong> — ${x.phone || "-"}</li>
-        <li><strong>Email:</strong> — ${x.email || "-"}</li>
+        <li><strong>ဆက်သွယ်ရန်</strong> — ${contact || "-"}</li>
       </ol>
+
       <div class="row" style="gap:8px;margin-top:10px">
         <button class="btn" onclick="editRecord('${x.id}')">Edit</button>
         <button class="btn" onclick="deleteRecord('${x.id}')">Delete</button>
       </div>`;
     host.appendChild(item);
   });
+
   const empty = document.getElementById("recEmpty");
   if (empty) empty.style.display = n ? "none" : "block";
 };
+
 window.editRecord = async (id) => {
   if (!auth.currentUser || !isAdmin) return alert("Admin only");
   const snap = await getDoc(doc(db, "records", id));
@@ -1234,20 +1247,23 @@ window.exportRecordsCSV = async () => {
 window.exportRecordsPDF = async () => {
   try {
     if (!auth.currentUser || !isAdmin) return alert("Admin only");
-    const rows = await fetchYearRecords();
-    const y =
-      document.getElementById("recYear").value || new Date().getFullYear();
+
+    const rows = await fetchYearRecords(); // r = {photo,name,age,vow,nrc,mother,father,addr,edu,role,phone,email}
+    const y = document.getElementById("recYear").value || new Date().getFullYear();
+
     const win = window.open("", "_blank");
     const style = `<style>
-        body{ font-family: "Inter","Noto Sans Myanmar", Arial, sans-serif; padding: 16px; }
-        h2{ margin: 0 0 12px 0 }
-        table{ border-collapse: collapse; width:100%; }
-        th, td{ border:1px solid #999; padding:6px 8px; font-size:12px; vertical-align:top }
-        th{ background:#f1f5f9; }
-        img{ max-width:80px; max-height:80px; object-fit:cover; border-radius:8px }
-      </style>`;
+      body{ font-family: "Inter","Noto Sans Myanmar", Arial, sans-serif; padding: 16px; }
+      h2{ margin: 0 0 12px 0 }
+      table{ border-collapse: collapse; width:100%; }
+      th, td{ border:1px solid #999; padding:6px 8px; font-size:12px; vertical-align:top }
+      th{ background:#f1f5f9; }
+      img{ max-width:80px; max-height:80px; object-fit:cover; border-radius:8px }
+    </style>`;
+
+    // “ဓာတ်ပုံ” ဆိုတဲ့ စာလုံးမပါချင်ရင် ဘာမှမရေးဘဲ blank header ထားထားနိုင်
     const head = [
-      // "ဓာတ်ပုံ",
+      "", // photo column header blank
       "နာမည်",
       "အသက်",
       "ဝါတော်",
@@ -1256,36 +1272,38 @@ window.exportRecordsPDF = async () => {
       "ယခင်နေရပ်လိပ်စာ",
       "ပညာအရည်အချင်း",
       "လက်ရှိရာထူး",
-      "ဖုန်း",
-      "Email",
+      "ဆက်သွယ်ရန်" // Contact/Email ကို တစ်ခုတည်းကော်လံ
     ];
-    const rowsHTML = rows
-      .map(
-        (r) => `
-      <tr>
-        <td>${r.photo ? `<img src="${r.photo}">` : ""}</td>
-        <td>${r.name}</td>
-        <td>${r.age}</td>
-        <td>${r.vow}</td>
-        <td>${r.nrc}</td>
-        <td>${r.parents}</td>
-        <td>${r.addr}</td>
-        <td>${r.edu}</td>
-        <td>${r.role}</td>
-        <td>${r.phone}</td>
-        <td>${r.email}</td>
-      </tr>`
-      )
-      .join("");
-    win.document
-      .write(`<!doctype html><html><head><meta charset="utf-8">${style}</head><body>
-      <h2>Records ${y}</h2>
-      <table>
-        <thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-        <tbody>${rowsHTML}</tbody>
-      </table>
-      <script>window.onload = () => { window.print(); }</script>
-    </body></html>`);
+
+    const rowsHTML = rows.map(r => {
+      const parents = [r.mother, r.father].filter(Boolean).join(" / ");
+      const contact = [r.phone ? `☎ ${r.phone}` : "", r.email ? `✉ ${r.email}` : ""]
+        .filter(Boolean).join(" / ");
+      return `
+        <tr>
+          <td>${r.photo ? `<img src="${r.photo}">` : ""}</td>
+          <td>${r.name || "-"}</td>
+          <td>${r.age || "-"}</td>
+          <td>${r.vow || "-"}</td>
+          <td>${r.nrc || "-"}</td>
+          <td>${parents || "-"}</td>
+          <td>${r.addr || "-"}</td>
+          <td>${r.edu || "-"}</td>
+          <td>${r.role || "-"}</td>
+          <td>${contact || "-"}</td>
+        </tr>`;
+    }).join("");
+
+    win.document.write(
+      `<!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <h2>Records ${y}</h2>
+        <table>
+          <thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+          <tbody>${rowsHTML}</tbody>
+        </table>
+        <script>window.onload = () => { window.print(); }</script>
+      </body></html>`
+    );
     win.document.close();
   } catch (e) {
     alert("Export PDF failed: " + e.message);

@@ -132,6 +132,12 @@ body {
   padding: 14px;
   box-shadow: var(--shadow);
 }
+/* Records list labels */
+.card ol { margin-top: 8px; }
+.card ol li { margin: 4px 0; line-height: 1.5; }
+.card ol li strong { display: inline-block; min-width: 140px; }
+.rec-photo-box { margin-bottom: 10px; text-align: center; }
+.rec-photo { max-width: 140px; max-height: 140px; object-fit: cover; border-radius: 10px; }
 .hero {
   text-align: left;
 }
