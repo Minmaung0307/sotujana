@@ -751,3 +751,18 @@ html[data-theme="rose"] {
   width: 100%;
   border-radius: 12px;
 }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+.brand .logo {
+  height: 40px;
+  width: auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
