@@ -1125,7 +1125,8 @@ window.searchRecords = async () => {
         <li><strong>ယခင်နေရပ်လိပ်စာ</strong> — ${x.addr || "-"}</li>
         <li><strong>ပညာအရည်အချင်း</strong> — ${x.edu || "-"}</li>
         <li><strong>လက်ရှိရာထူး</strong> — ${x.role || "-"}</li>
-        <li><strong>ဆက်သွယ်ရန်</strong> — ${contact || "-"}</li>
+        <li><strong>ဖုန်း</strong> — ${x.phone || "-"}</li>
+        <li><strong>အီးမေးလ်</strong> — ${x.email || "-"}</li>
       </ol>
 
       <div class="row" style="gap:8px;margin-top:10px">
@@ -1272,7 +1273,8 @@ window.exportRecordsPDF = async () => {
       "ယခင်နေရပ်လိပ်စာ",
       "ပညာအရည်အချင်း",
       "လက်ရှိရာထူး",
-      "ဆက်သွယ်ရန်" // Contact/Email ကို တစ်ခုတည်းကော်လံ
+      "ဖုန်း",
+      "အီးမေးလ်"
     ];
 
     const rowsHTML = rows.map(r => {
@@ -1290,7 +1292,8 @@ window.exportRecordsPDF = async () => {
           <td>${r.addr || "-"}</td>
           <td>${r.edu || "-"}</td>
           <td>${r.role || "-"}</td>
-          <td>${contact || "-"}</td>
+          <td>${r.phone || "-"}</td>
+          <td>${r.email || "-"}</td>
         </tr>`;
     }).join("");
 
