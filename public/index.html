@@ -45,7 +45,7 @@
       </button>
       <button data-tab="events" onclick="tab(this,'events')">📅 Events</button>
       <button data-tab="donate" onclick="tab(this,'donate')">🙏 Donate</button>
-      <button data-tab="records" onclick="tab(this,'records')">
+      <button data-tab="records" data-guard="admin" onclick="tab(this,'records')">
         📘 Records
       </button>
       <button
@@ -155,7 +155,7 @@
       </section>
 
       <!-- Records -->
-      <section id="records" class="section">
+      <section id="records" class="section" data-guard="admin">
         <div class="wrap">
           <div class="card gradient">
             <h2>နှစ်စဉ်မှတ်တမ်း</h2>

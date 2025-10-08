@@ -208,15 +208,18 @@ async function loadPublic(){
 
 // Auth change ဖြစ်တိုင်း စစ်
 onAuthStateChanged(auth, async (user) => {
-  const isAdmin = await checkAdmin(user); // ⬅️ ဒီလိုပြောင်း
-  applyGuards(isAdmin); // UI Guard (admin/guest toggle)
-  loadPublic();          // Home / Events / Donate လို public pages
+  // admin စစ်
+  isAdmin = await checkAdmin(user);
 
-  if (isAdmin) {
-    // Admin-only loaders
-    // loadRecordsAdmin();
-    // loadDrafts();
-  }
+  // top-bar UI pills, sign-in/out UI
+  await updateAuthUI(user);
+
+  // role guard + public pages (Home/Events/Donate)
+  applyGuards(isAdmin);
+  await loadPublic();
+
+  // posts ကို page 1 နဲ့ ထည့်ပြ
+  loadPostsPage(0);
 });
 
 // 1) Posts (read-only list)
