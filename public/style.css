@@ -255,3 +255,26 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
   cursor: zoom-out;
 }
 .media-modal.hidden { display: none; }
+
+/* === Responsive Image Gallery (1–3 per row) === */
+.gallery { display: grid; gap: 10px; margin: 10px 0; }
+.gallery-row { display: grid; gap: 10px; }
+.gallery-row.cols-1 { grid-template-columns: 1fr; }
+.gallery-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.gallery-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.gallery-row img {
+  width: 100%; height: 240px; object-fit: cover;
+  border-radius: 12px; cursor: zoom-in; display: block;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.gallery-row img:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(0,0,0,.18); }
+
+/* Mobile tweak */
+@media (max-width:720px){
+  .gallery-row img{ height: 180px; }
+}
+
+/* Video / Audio full width */
+.post-media video,
+.post-media audio { width: 100%; border-radius: 12px; }

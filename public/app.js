@@ -404,39 +404,70 @@ function escapeHTML(s) {
 
 // ---------- Render post blocks ----------
 function renderBlocks(arr) {
-  return (arr || [])
-    .map(function (b) {
-      if (b.type === "text") {
-        const txt = b.allowHTML ? safeHTML(b.text || "") : escapeHTML(b.text || "");
-        return `<div style="white-space:pre-wrap">${txt}</div>`;
-      }
+  const out = [];
+  const gallery = []; // temp bucket for consecutive images
 
-      if (b.type === "image") {
-        // preview ကို သေးသေးပြမယ်, click → zoom modal
-        return `<div class="media-wrap">
-                  <img src="${b.url}" alt="" onclick="openMediaZoom('img','${b.url}')">
-                </div>`;
-      }
+  function flushGallery() {
+    if (!gallery.length) return;
+    // chunk into rows of up to 3 images
+    let i = 0;
+    const rows = [];
+    while (i < gallery.length) {
+      rows.push(gallery.slice(i, i + 3));
+      i += 3;
+    }
+    const html = rows.map(row => {
+      const cols = row.length; // 1 / 2 / 3
+      const items = row.map(url =>
+        `<img src="${url}" alt="" onclick="openMediaZoom('img','${url}')">`
+      ).join('');
+      return `<div class="gallery-row cols-${cols}">${items}</div>`;
+    }).join('');
+    out.push(`<div class="gallery">${html}</div>`);
+    gallery.length = 0; // reset
+  }
 
-      if (b.type === "video") {
-        // preview ကို control မပေးဘဲ သေးသေးပြ—နှိပ်ရင် zoom modal (controls ရှိ)
-        return `<div class="media-wrap">
-                  <video src="${b.url}" muted playsinline preload="metadata"
-                         onclick="openMediaZoom('video','${b.url}')"></video>
-                </div>`;
-      }
+  (arr || []).forEach(b => {
+    if (b.type === "image") {
+      // collect consecutive images
+      gallery.push(b.url);
+      return;
+    }
 
-      if (b.type === "audio") {
-        // audio ကို preview မှာ controls ပါ—zoom view မှာလည်းကြီးစီးပြ
-        return `<div class="media-wrap">
-                  <audio src="${b.url}" controls preload="metadata"
-                         onclick="openMediaZoom('audio','${b.url}')"></audio>
-                </div>`;
-      }
+    // If not image → flush images first
+    flushGallery();
 
-      return "";
-    })
-    .join("");
+    if (b.type === "text") {
+      const txt = b.allowHTML ? safeHTML(b.text || "") : escapeHTML(b.text || "");
+      out.push(`<div style="white-space:pre-wrap">${txt}</div>`);
+      return;
+    }
+
+    if (b.type === "video") {
+      out.push(
+        `<div class="post-media">
+           <video src="${b.url}" controls preload="metadata"
+                  onclick="openMediaZoom('video','${b.url}')"></video>
+         </div>`
+      );
+      return;
+    }
+
+    if (b.type === "audio") {
+      out.push(
+        `<div class="post-media">
+           <audio src="${b.url}" controls preload="metadata"
+                  onclick="openMediaZoom('audio','${b.url}')"></audio>
+         </div>`
+      );
+      return;
+    }
+  });
+
+  // end of loop → flush any remaining images
+  flushGallery();
+
+  return out.join("");
 }
 
 function needsClip(html, threshold = 450){
