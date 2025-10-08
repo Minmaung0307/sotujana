@@ -1103,7 +1103,7 @@ window.searchRecords = async () => {
     item.className = "card";
     item.innerHTML = `${img}
       <ol style="padding-left:18px;margin:0">
-        <li>ဓာတ်ပုံ</li>
+        // <li>ဓာတ်ပုံ</li>
         <li><strong>နာမည်</strong> — ${x.name || "-"}</li>
         <li><strong>အသက်</strong> — ${x.age || "-"}</li>
         <li><strong>ဝါတော်</strong> — ${x.vow || "-"}</li>
@@ -1114,8 +1114,8 @@ window.searchRecords = async () => {
         <li><strong>ယခင်နေရပ်လိပ်စာ</strong> — ${x.addr || "-"}</li>
         <li><strong>ပညာအရည်အချင်း</strong> — ${x.edu || "-"}</li>
         <li><strong>လက်ရှိရာထူး</strong> — ${x.role || "-"}</li>
-        <li><strong>ဆက်သွယ်ရန်ဖုန်း</strong> — ${x.phone || "-"}</li>
-        <li><strong>ဆက်သွယ်ရန် email</strong> — ${x.email || "-"}</li>
+        <li><strong>Contact:</strong> — ${x.phone || "-"}</li>
+        <li><strong>Email:</strong> — ${x.email || "-"}</li>
       </ol>
       <div class="row" style="gap:8px;margin-top:10px">
         <button class="btn" onclick="editRecord('${x.id}')">Edit</button>
@@ -1182,7 +1182,7 @@ async function fetchYearRecords() {
 }
 function toCSV(rows) {
   const head = [
-    "ဓာတ်ပုံ(URL)",
+    // "ဓာတ်ပုံ(URL)",
     "နာမည်",
     "အသက်",
     "ဝါတော်",
@@ -1247,7 +1247,7 @@ window.exportRecordsPDF = async () => {
         img{ max-width:80px; max-height:80px; object-fit:cover; border-radius:8px }
       </style>`;
     const head = [
-      "ဓာတ်ပုံ",
+      // "ဓာတ်ပုံ",
       "နာမည်",
       "အသက်",
       "ဝါတော်",
