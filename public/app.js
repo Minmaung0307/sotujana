@@ -1,8 +1,8 @@
 // app.js v2.3 (fixed imports, syntax-safe)
 // Source based on user's last upload; cleaned for syntax + missing imports.
-
 import { auth, db, st, applyPrefs } from "./firebase.js";
 import {
+  getFirestore,
   collection,
   addDoc,
   doc,
@@ -209,12 +209,6 @@ onAuthStateChanged(auth, (user)=>{
     // e.g. loadAdminDrafts(); loadRecordsAdmin(); …
   }
 });
-
-// ===== Example: Public loaders =====
-import {
-  getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { db } from "./firebase.js";
 
 // 1) Posts (read-only list)
 async function loadLatestPosts(){
