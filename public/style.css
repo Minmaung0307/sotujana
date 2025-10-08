@@ -570,9 +570,14 @@ html[data-theme="rose"] {
   outline: 2px solid var(--accent);
 }
 .s-btn svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
+  width: 26px;
+  height: 26px;
+  fill: #ddd;
+  transition: fill 0.25s ease;
+}
+
+.s-btn:hover svg {
+  fill: var(--accent, #0ea5e9);
 }
 
 .footer-bottom {
