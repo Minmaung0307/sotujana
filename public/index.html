@@ -53,6 +53,7 @@
         id="btnTabAdmin"
         onclick="tab(this,'admin')"
         style="display: none"
+        data-nav="admin" data-guard="admin"
       >
         🔐 Admin
       </button>
@@ -182,7 +183,7 @@
       </section>
 
       <!-- Admin -->
-      <section id="admin" class="section" style="display: none">
+      <section id="admin" data-guard="admin" class="section" style="display: none">
         <div class="wrap">
           <div class="grid two">
             <div class="card inset">

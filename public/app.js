@@ -140,6 +140,160 @@ window.logout = async () => {
   }
 };
 
+// ===== Router (single page) =====
+const PAGES = ["home","events","donate","admin"];
+function showPage(name){
+  PAGES.forEach(p=>{
+    const el = document.getElementById("page-" + p);
+    if (!el) return;
+    el.style.display = (p === name) ? "" : "none";
+  });
+  // active class on nav
+  document.querySelectorAll('[data-nav]').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('data-nav') === name);
+  });
+}
+document.addEventListener('click', (e)=>{
+  const trg = e.target.closest('[data-nav]');
+  if(!trg) return;
+  e.preventDefault();
+  const name = trg.getAttribute('data-nav');
+  if(name === 'admin' && !window.__isAdmin){ return; } // guard
+  showPage(name);
+});
+
+// ===== Guard UI by role =====
+function applyGuards(isAdmin){
+  window.__isAdmin = !!isAdmin;
+  // admin-only elements
+  document.querySelectorAll('[data-guard="admin"]').forEach(el=>{
+    el.style.display = isAdmin ? "" : "none";
+  });
+  // guest-only elements
+  document.querySelectorAll('[data-guard="guest"]').forEach(el=>{
+    el.style.display = isAdmin ? "none" : "";
+  });
+  // default opening page for guest/admin
+  if (isAdmin) {
+    // Admin ဝင်လာလျှင် Home ကို default ပြထား – မိမိတွေ့ရတဲ့ tab ကိုနှိပ်ရင် Admin ထဲဝင်နိုင်
+    showPage('home');
+  } else {
+    // Guest – Home ကို default
+    showPage('home');
+  }
+}
+
+// ===== Public data loaders (guest & admin မရွေး) =====
+async function loadPublic(){
+  try {
+    await Promise.all([
+      loadLatestPosts(),   // Posts list (read-only for guests)
+      loadPublicEvents(),  // Events list
+      loadDonateView()     // Donate QR/notes
+    ]);
+  } catch(e){
+    console.warn("Public load failed", e);
+  }
+}
+
+// ===== Auth state =====
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import { auth } from "./firebase.js"; // your initialized auth
+
+// ဤနေရာမှာ သင့် admin uid(s) သတ်မှတ် – later: custom claims သုံးနိုင်
+const ADMIN_UIDS = ["YOUR_ADMIN_UID_1","YOUR_ADMIN_UID_2"];
+
+onAuthStateChanged(auth, (user)=>{
+  const isAdmin = !!user && ADMIN_UIDS.includes(user.uid);
+  applyGuards(isAdmin);
+  loadPublic(); // guest/admin အတွက် မရှိမဖြစ် ခေါ်
+
+  // Admin-only things lazy load
+  if (isAdmin) {
+    // e.g. loadAdminDrafts(); loadRecordsAdmin(); …
+  }
+});
+
+// ===== Example: Public loaders =====
+import {
+  getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { db } from "./firebase.js";
+
+// 1) Posts (read-only list)
+async function loadLatestPosts(){
+  const host = document.getElementById('postGrid');
+  if(!host) return;
+  host.innerHTML = '';
+  const snap = await getDocs(query(collection(db,'posts'), orderBy('createdAt','desc'), limit(10)));
+  snap.forEach(d=>{
+    const p = d.data();
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h3>${escapeHTML(p.title || 'Untitled')}</h3>
+      ${renderBlocks(p.blocks || [])}
+      <div class="post-foot">
+        <span class="muted">${p.month||'?'} / ${p.year||'?'}</span>
+        ${window.__isAdmin ? `
+          <div class="post-actions" data-guard="admin">
+            <button class="btn small" onclick="editPost('${d.id}')">✏ Edit</button>
+            <button class="btn small danger" onclick="deletePost('${d.id}')">🗑 Delete</button>
+          </div>` : ``}
+      </div>
+    `;
+    host.appendChild(card);
+  });
+}
+
+// 2) Events (public calendar/list)
+async function loadPublicEvents(){
+  const host = document.getElementById('eventList');
+  if(!host) return;
+  host.innerHTML = '';
+  const snap = await getDocs(query(collection(db,'events'), orderBy('start','asc'), limit(100)));
+  snap.forEach(d=>{
+    const e = d.data();
+    const li = document.createElement('div');
+    li.className = 'event-item';
+    li.innerHTML = `
+      <div class="ev-title">${escapeHTML(e.title||'Event')}</div>
+      <div class="ev-time">${new Date(e.start||Date.now()).toLocaleString()}</div>
+      ${e.note ? `<div class="ev-note">${escapeHTML(e.note)}</div>`:''}
+    `;
+    host.appendChild(li);
+  });
+}
+
+// 3) Donate (QR/notes public)
+async function loadDonateView(){
+  const kbzImg = document.getElementById('kbzQRImg');
+  const cbImg  = document.getElementById('cbQRImg');
+  const ayaImg = document.getElementById('ayaQRImg');
+  const kbzNote = document.getElementById('kbzNote');
+  const cbNote  = document.getElementById('cbNote');
+  const ayaNote = document.getElementById('ayaNote');
+  // settings/donate doc ထဲက url & note တွေဖတ်
+  const ref = doc(db,'settings','donate');
+  const snap = await getDoc(ref);
+  if(snap.exists()){
+    const s = snap.data();
+    if (kbzImg) kbzImg.src = s.kbzUrl || '';
+    if (cbImg)  cbImg.src  = s.cbUrl  || '';
+    if (ayaImg) ayaImg.src = s.ayaUrl || '';
+    if (kbzNote) kbzNote.textContent = s.kbzNote || '';
+    if (cbNote)  cbNote.textContent  = s.cbNote  || '';
+    if (ayaNote) ayaNote.textContent = s.ayaNote || '';
+  }
+}
+
+// small helpers
+function escapeHTML(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
+function safeHTML(s){return String(s||'');}
+
+// renderBlocks() သင်သုံးနေပြီးသား function ကိုဆက်သုံးနိုင်
+// image/video/audio တွေအတွက် အရင်လို UI ஐ ထားနိုင်
+
 // ===== Pagination state =====
 const PAGE_SIZE = 10;
 let pageIndex = 0;
