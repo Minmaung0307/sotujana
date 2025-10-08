@@ -621,6 +621,26 @@ document.getElementById('btnNext').addEventListener('click', ()=>{
 // Initial
 loadPostsPage(0);
 
+// === Delete Post (Admin only) ===
+async function deletePost(id){
+  if(!isAdmin){
+    alert('Admin များသာ delete လုပ်ခွင့်ရှိသည်။');
+    return;
+  }
+  const sure = confirm('ဤ post ကိုဖျက်မည်မှာ သေချာပါသလား?');
+  if(!sure) return;
+
+  try {
+    await deleteDoc(doc(db, 'posts', id));
+    alert('Post ဖျက်ပြီးပါပြီ။');
+    // ပြန်စ refresh လုပ်
+    loadPostsPage(pageIndex || 0);
+  } catch (e) {
+    console.error('Delete failed:', e);
+    alert('Post ဖျက်ရာတွင် ပြဿနာဖြစ်ပွားသည်: ' + e.message);
+  }
+}
+
 // Donations
 async function loadDonation() {
   const cfg = await getDoc(doc(db, "meta", "donation"));
