@@ -196,12 +196,8 @@ async function loadPublic(){
   }
 }
 
-// ===== Auth state =====
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-import { auth } from "./firebase.js"; // your initialized auth
-
 // ဤနေရာမှာ သင့် admin uid(s) သတ်မှတ် – later: custom claims သုံးနိုင်
-const ADMIN_UIDS = ["YOUR_ADMIN_UID_1","YOUR_ADMIN_UID_2"];
+const ADMIN_UIDS = ["eKTVqRMbmkhabnUMJrHTWahFEzz2","QAAuXY0jRTd8V8fbmx7H0ThfNYh1", "F6bqlHr0MTYR0ffjE0Ukc6oGijF2", "y3LokhTkpQb9ozItk6YGUJ7L54r2", "hHFkjpSf7MZ293hoRJF3t5EyJ982"];
 
 onAuthStateChanged(auth, (user)=>{
   const isAdmin = !!user && ADMIN_UIDS.includes(user.uid);
