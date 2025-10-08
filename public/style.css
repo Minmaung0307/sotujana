@@ -508,7 +508,7 @@ html[data-theme="rose"] {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1.2fr;
+  /* grid-template-columns: 1.2fr 1fr 1.2fr; */
   gap: 16px;
   align-items: start;
 }
