@@ -17,6 +17,7 @@ import {
   deleteDoc,
   updateDoc,
   increment,
+  startAfter,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import {
   onAuthStateChanged,
@@ -622,7 +623,7 @@ document.getElementById('btnNext').addEventListener('click', ()=>{
 loadPostsPage(0);
 
 // === Delete Post (Admin only) ===
-async function deletePost(id){
+window.deletePost = async function(id){   // <<=== change to window.deletePost
   if(!isAdmin){
     alert('Admin များသာ delete လုပ်ခွင့်ရှိသည်။');
     return;
@@ -639,7 +640,7 @@ async function deletePost(id){
     console.error('Delete failed:', e);
     alert('Post ဖျက်ရာတွင် ပြဿနာဖြစ်ပွားသည်: ' + e.message);
   }
-}
+};
 
 // Donations
 async function loadDonation() {
