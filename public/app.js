@@ -1410,6 +1410,31 @@ window.closeMediaZoom = function(){
   if(aud) { aud.pause(); aud.removeAttribute('src'); aud.load(); }
 };
 
+// === Email Subscribe (အသစ်တင်ရင် အသိပေးမယ့် subscribers စာရင်းသွင်းခြင်း) ===
+window.signup = async (ev) => {
+  ev.preventDefault();
+  const email = document.getElementById("signupEmail").value.trim();
+  const msgBox = document.createElement("div");
+  msgBox.className = "note";
+  document.getElementById("signupForm").appendChild(msgBox);
+
+  if (!email) return alert("Email ထည့်ပါ");
+
+  try {
+    await addDoc(collection(db, "subscribers"), {
+      email,
+      ts: Date.now(),
+    });
+    msgBox.textContent = "🎉 စာရင်းသွင်းပြီးပါပြီ။ အသစ်တင်ရင် အသိပေးပါမည်။";
+    document.getElementById("signupForm").reset();
+  } catch (e) {
+    console.error(e);
+    msgBox.textContent = "Error: " + e.message;
+  }
+
+  setTimeout(() => (msgBox.textContent = ""), 4000);
+};
+
 // === Events: create / list / delete ===
 
 // Image preview (optional)
