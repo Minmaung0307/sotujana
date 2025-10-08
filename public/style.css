@@ -264,11 +264,19 @@ html[data-theme="rose"]{ --bg:#fff1f2; --card:#ffffff; --ink:#9f1239; --muted:#b
 .gallery-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
 
 .gallery-row img {
-  width: 100%; height: 240px; object-fit: cover;
-  border-radius: 12px; cursor: zoom-in; display: block;
-  transition: transform .2s ease, box-shadow .2s ease;
+  width: 100%;
+  height: 240px;
+  object-fit: contain; /* <-- contain ပြောင်းပါ (အပြည့်အဝဖော်ပြဖို့) */
+  background: #fafafa; /* ပိုမိုသန့်ရှင်းအောင် light background ပေး */
+  border-radius: 12px;
+  cursor: zoom-in;
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.gallery-row img:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(0,0,0,.18); }
+.gallery-row img:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+}
 
 /* Mobile tweak */
 @media (max-width:720px){
