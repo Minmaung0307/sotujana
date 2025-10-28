@@ -479,7 +479,6 @@ html[data-theme="rose"] {
 
 /* Like button */
 .like-btn {
-  font-size: large;
   border: 1px solid var(--line, #e5e7eb);
   background: #fff;
   padding: 6px 10px;
@@ -718,7 +717,7 @@ html[data-theme="rose"] {
   display: flex;
   align-items: center; /* vertical center */
   justify-content: center; /* horizontal center */
-  background: #f6f4f411;
+  background: #fafafa;
   border-radius: 12px;
   overflow: hidden; /* tidy corners */
 }
@@ -736,11 +735,10 @@ html[data-theme="rose"] {
   cursor: zoom-in;
   display: block;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 3px 7px rgba(180, 249, 161, 0.843);
 }
 .gallery-row img:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgb(11, 11, 11);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
 }
 
 /* Mobile tweak */
@@ -799,7 +797,6 @@ html[data-theme="rose"] {
   vertical-align: middle;
 }
 .react-btn {
-  font-size: large;
   display: inline-flex;
   align-items: center;
   gap: 4px;
