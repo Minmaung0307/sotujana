@@ -479,6 +479,7 @@ html[data-theme="rose"] {
 
 /* Like button */
 .like-btn {
+  font-size: large;
   border: 1px solid var(--line, #e5e7eb);
   background: #fff;
   padding: 6px 10px;
@@ -796,6 +797,7 @@ html[data-theme="rose"] {
   vertical-align: middle;
 }
 .react-btn {
+  font-size: large;
   display: inline-flex;
   align-items: center;
   gap: 4px;
