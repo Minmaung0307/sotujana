@@ -414,10 +414,19 @@
     </main>
 
     <!-- Global media zoom modal (outside sections is fine) -->
+    <!-- Global media zoom modal -->
     <div id="mediaModal" class="media-modal hidden" onclick="closeMediaZoom()">
+      <!-- Prev / Next buttons -->
+      <button class="nav-btn prev" type="button" aria-label="Previous" onclick="event.stopPropagation(); galleryPrev()">
+        ‹
+      </button>
       <img id="zoomImg" class="hidden" alt="" />
       <video id="zoomVid" controls class="hidden"></video>
       <audio id="zoomAud" controls class="hidden"></audio>
+      <button class="nav-btn next" type="button" aria-label="Next" onclick="event.stopPropagation(); galleryNext()">
+        ›
+      </button>
+      <div id="mediaCounter" class="media-counter" aria-live="polite"></div>
     </div>
 
     <!-- Single footer at the end -->

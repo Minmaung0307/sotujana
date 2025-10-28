@@ -669,6 +669,37 @@ window.toggleLike = async function (id) {
   }
 };
 
+// ---- LocalStorage helpers for reactions ----
+function reactKey(postId, key){ return `react:${postId}:${key}`; }
+function isReactedLocal(postId, key){ return localStorage.getItem(reactKey(postId,key)) === '1'; }
+function setReactedLocal(postId, key, val){ 
+  if (val) localStorage.setItem(reactKey(postId,key),'1'); 
+  else localStorage.removeItem(reactKey(postId,key));
+}
+
+// ---- Reaction toggle (per type) ----
+window.toggleReaction = async function(postId, key){
+  // find the button & count
+  const btn = document.querySelector(`.react-btn[data-post="${postId}"][data-react="${key}"]`);
+  if (!btn) return;
+  const countEl = btn.querySelector('.react-count');
+  const was = isReactedLocal(postId, key);
+  const cur = parseInt(countEl?.textContent || '0', 10);
+  const next = was ? Math.max(0, cur - 1) : cur + 1;
+
+  // optimistic UI
+  btn.classList.toggle('active', !was);
+  if (countEl) countEl.textContent = String(next);
+  setReactedLocal(postId, key, !was);
+
+  // persist
+  try{
+    await updateDoc(doc(db,'posts',postId), {
+      [`reactions.${key}`]: increment(was ? -1 : 1)
+    });
+  }catch(e){ /* ignore for now */ }
+};
+
 // ---------- Load latest posts (1 block per post + admin buttons) ----------
 // Render a page of posts
 async function loadPostsPage(whichPage = 0){
@@ -740,11 +771,38 @@ async function loadPostsPage(whichPage = 0){
 
       // Build card inner
       const head = `<h3>${title}</h3>`;
+      // reactions counts (from Firestore doc if present)
+      const rx = p.reactions || {};
+      const keys = [
+        {k:'thanks',  emoji:'🙏'},
+        {k:'happy',   emoji:'😊'},
+        {k:'congrats',emoji:'🎉'},
+        {k:'wow',     emoji:'😮'},
+        {k:'great',   emoji:'⭐'}
+      ];
+
+      const reactionsBar = `
+        <div class="reactions">
+          ${keys.map(({k,emoji})=>{
+            const cnt = typeof rx[k]==='number' ? rx[k] : 0;
+            const active = isReactedLocal(d.id, k) ? 'active' : '';
+            return `
+              <button class="react-btn ${active}"
+                      data-react="${k}" data-post="${d.id}"
+                      onclick="toggleReaction('${d.id}','${k}')">
+                <span>${emoji}</span> <span class="react-count">${cnt}</span>
+              </button>`;
+          }).join('')}
+        </div>
+      `;
+
+      // Footer build
       const foot = `
         <div class="row mt post-foot">
           ${meta}
           <div class="space"></div>
           ${likeBtn}
+          ${reactionsBar}
           ${adminBtns}
         </div>`;
 
@@ -764,6 +822,18 @@ async function loadPostsPage(whichPage = 0){
       const footWrap = document.createElement('div');
       footWrap.innerHTML = foot;
       el.appendChild(footWrap);
+
+      // === Hook images in this post to openGallery ===
+      const imgs = Array.from(el.querySelectorAll('.post-media img, .gallery-row img'))
+        .filter(im => im && im.getAttribute('src'));
+      const urls = imgs.map(im => im.getAttribute('src'));
+      imgs.forEach((im, idx) => {
+        im.style.cursor = 'zoom-in';
+        im.addEventListener('click', (ev)=>{
+          ev.preventDefault();
+          window.openGallery(urls, idx);
+        });
+      });
 
       host.appendChild(el);
     });
@@ -1375,6 +1445,47 @@ window.editPost = async function (id) {
   show("admin");
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
+
+// ===== Gallery state =====
+let G = { urls: [], index: 0 };
+
+function updateMediaCounter(){
+  const el = document.getElementById('mediaCounter');
+  if (!el || !G.urls.length) return;
+  el.textContent = `${G.index + 1} / ${G.urls.length}`;
+}
+
+window.openGallery = function(urls, startIndex){
+  G.urls = urls || [];
+  G.index = Math.max(0, Math.min(startIndex || 0, G.urls.length - 1));
+  if (!G.urls.length) return;
+  // show image in existing zoom modal
+  window.openMediaZoom('img', G.urls[G.index]);
+  updateMediaCounter();
+};
+
+window.galleryNext = function(){
+  if (!G.urls.length) return;
+  G.index = (G.index + 1) % G.urls.length;
+  window.openMediaZoom('img', G.urls[G.index]);
+  updateMediaCounter();
+};
+window.galleryPrev = function(){
+  if (!G.urls.length) return;
+  G.index = (G.index - 1 + G.urls.length) % G.urls.length;
+  window.openMediaZoom('img', G.urls[G.index]);
+  updateMediaCounter();
+};
+
+// keyboard arrows inside modal
+document.addEventListener('keydown', (e)=>{
+  const modal = document.getElementById('mediaModal');
+  if (modal && !modal.classList.contains('hidden')){
+    if (e.key === 'ArrowRight') { e.preventDefault(); galleryNext(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); galleryPrev(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeMediaZoom(); }
+  }
+});
 
 // === Media zoom handling (audio/video မပါအောင် ထိန်း) ===
 window.openMediaZoom = function(type, src){

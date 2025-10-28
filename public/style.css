@@ -786,3 +786,62 @@ html[data-theme="rose"] {
   border-radius: 8px;
   object-fit: cover;
 }
+
+/* === Reactions (next to Like) === */
+.reactions {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+  flex-wrap: wrap;
+  vertical-align: middle;
+}
+.react-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--line, #e5e7eb);
+  background: #fff;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.react-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+}
+.react-btn.active {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
+}
+.react-count { min-width: 1.5ch; text-align: right; }
+
+/* === Modal prev/next buttons & counter === */
+.media-modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; }
+.media-modal .nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.3);
+  background: rgba(0,0,0,.35);
+  color: #fff; font-size: 28px;
+  cursor: pointer;
+  user-select: none;
+}
+.media-modal .nav-btn.prev { left: 14px; }
+.media-modal .nav-btn.next { right: 14px; }
+.media-modal .media-counter {
+  position: absolute;
+  bottom: 12px;
+  left: 50%; transform: translateX(-50%);
+  color: #fff; font-weight: 700;
+  background: rgba(0,0,0,.35);
+  padding: 6px 10px; border-radius: 999px;
+  font-size: 12px;
+}
