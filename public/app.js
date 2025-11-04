@@ -777,7 +777,7 @@ async function loadPostsPage(whichPage = 0){
         {k:'thanks',  emoji:'🙏'},
         {k:'happy',   emoji:'😊'},
         {k:'congrats',emoji:'🎉'},
-        {k:'wow',     emoji:'😮'},
+        // {k:'wow',     emoji:'😮'},
         {k:'great',   emoji:'⭐'}
       ];
 

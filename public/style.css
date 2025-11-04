@@ -51,6 +51,7 @@ body {
 .btn {
   font-size: large;
   border: 1px solid var(--line);
+  color: #188176;
   background: #fff;
   padding: 8px 12px;
   border-radius: 10px;
@@ -68,11 +69,11 @@ body {
   padding: 4px 10px;
   border-radius: 999px;
   background: #eef2ff;
-  color: #075985;
+  color: #b27519;
   font-size: 1.1rem;
 }
 .nav {
-  position: sticky;
+  /* position: sticky; */
   top: 48px;
   display: flex;
   gap: 8px;
@@ -496,7 +497,7 @@ html[data-theme="rose"] {
 }
 .like-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
 }
 .like-btn.liked {
   background: #fee2e2;
@@ -864,7 +865,7 @@ html[data-theme="rose"] {
 }
 .react-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+  box-shadow: 0 6px 14px rgba(0,0,0,.06);
 }
 .react-btn.active {
   background: #eef2ff;
