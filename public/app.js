@@ -48,6 +48,96 @@ selFont?.addEventListener("change", (e) => {
   applyPrefs();
 });
 
+/* ===== URL-ONLY MEDIA HELPERS (drop-in) ===== */
+
+// 1) Google Drive → direct view
+function toDriveDirect(u='') {
+  try {
+    const m1 = u.match(/\/file\/d\/([^/]+)\//);
+    const m2 = u.match(/[?&]id=([^&]+)/);
+    const id = m1?.[1] || m2?.[1];
+    return id ? `https://drive.google.com/uc?export=view&id=${id}` : u;
+  } catch(e){ return u; }
+}
+
+// 2) YouTube → embed
+function toYouTubeEmbed(u='') {
+  try {
+    const y = new URL(u);
+    if (y.hostname.includes('youtube.com') && y.searchParams.get('v')) {
+      return `https://www.youtube.com/embed/${y.searchParams.get('v')}`;
+    }
+    if (y.hostname === 'youtu.be') {
+      return `https://www.youtube.com/embed/${y.pathname.slice(1)}`;
+    }
+    return u;
+  } catch(e){ return u; }
+}
+
+// 3) Normalizer (any URL → best playable form)
+function normMediaURL(url = "") {
+  if (!url) return "";
+
+  // Google Drive direct link
+  if (url.includes("drive.google.com")) {
+    const id = (url.match(/\/d\/([^/]+)/) || [])[1];
+    if (id) return `https://drive.google.com/uc?export=view&id=${id}`;
+  }
+
+  // YouTube short / long links → embed
+  if (url.includes("youtu.be/")) {
+    const id = url.split("youtu.be/")[1].split("?")[0];
+    return `https://www.youtube.com/embed/${id}`;
+  }
+  if (url.includes("youtube.com/watch?v=")) {
+    const id = new URL(url).searchParams.get("v");
+    return `https://www.youtube.com/embed/${id}`;
+  }
+
+  // GitHub blob → raw
+  if (url.includes("github.com") && url.includes("/blob/")) {
+    return url.replace("/blob/", "/raw/");
+  }
+
+  return url;
+}
+
+// 4) Tiny “BB-code” style parser for body text
+// Usage: htmlEl.innerHTML = parseMediaShortcodes(text)
+function parseMediaShortcodes(text=''){
+  const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  let out = (text||'')+'';
+
+  // [img]url[/img]
+  out = out.replace(/\[img\]\s*([^\]]+?)\s*\[\/img\]/gi, (_,u)=>{
+    const src = normMediaURL(u.trim());
+    return `<figure class="m-img"><img src="${src}" alt="image" loading="lazy"/></figure>`;
+  });
+
+  // [video]url[/video]  (YouTube/GDrive/MP4)
+  out = out.replace(/\[video\]\s*([^\]]+?)\s*\[\/video\]/gi, (_,u)=>{
+    const src = normMediaURL(u.trim());
+    if (src.includes('youtube.com/embed/')) {
+      return `<div class="m-yt"><iframe src="${src}" frameborder="0" allowfullscreen loading="lazy"></iframe></div>`;
+    }
+    return `<video controls preload="metadata"><source src="${src}"></video>`;
+  });
+
+  // [audio]url[/audio]
+  out = out.replace(/\[audio\]\s*([^\]]+?)\s*\[\/audio\]/gi, (_,u)=>{
+    const src = normMediaURL(u.trim());
+    return `<audio controls preload="metadata"><source src="${src}"></audio>`;
+  });
+
+  return out;
+}
+
+// 5) Collect a media URL from any editor block (ignores <input type="file">)
+function pickUrlFrom(container){
+  const url = container?.querySelector?.('[data-role="url"]')?.value?.trim() || '';
+  return url ? normMediaURL(url) : '';
+}
+
 // Tabs
 window.tab = (el, id) => {
   document
@@ -303,11 +393,42 @@ let haveNext = true;     // next ရှိ/မရှိ ပြသဖို့
 // Posts
 const blocksHost = document.getElementById("blocks");
 function blockTpl(type) {
-  if (type === "text")
-    return `<div class="block" data-type="text"><textarea placeholder="Text or HTML..." data-role="text"></textarea></div>`;
+  // 🔹 TEXT BLOCK
+  if (type === "text") {
+    return `<div class="block" data-type="text">
+      <textarea placeholder="Text or HTML..." data-role="text"></textarea>
+    </div>`;
+  }
+
+  // 🔹 MEDIA BLOCK (image / video / audio)
   const accept =
-    type === "image" ? "image/*" : type === "video" ? "video/*" : "audio/*";
-  return `<div class="block" data-type="${type}"><input type="file" accept="${accept}" data-role="file"/></div>`;
+    type === "image"
+      ? "image/*"
+      : type === "video"
+      ? "video/*"
+      : "audio/*";
+
+  return `
+    <div class="block" data-type="${type}">
+      <div class="media-input">
+        <label class="file small" style="opacity:0.6; pointer-events:none;">
+          <span>Upload ${type.toUpperCase()} (disabled)</span>
+          <input type="file" accept="${accept}" data-role="file" disabled />
+        </label>
+
+        <label class="url small">
+          <span>or paste ${type} URL</span>
+          <input type="url" placeholder="https:// (Google Drive, YouTube, GitHub raw)" data-role="url"/>
+        </label>
+
+        <div class="hint muted" style="font-size:12px;margin-top:6px;">
+          💡 Example:<br>
+          - Google Drive → https://drive.google.com/file/d/FILE_ID/view<br>
+          - YouTube → https://youtu.be/VIDEO_ID<br>
+          - GitHub → https://github.com/user/repo/blob/main/image.png
+        </div>
+      </div>
+    </div>`;
 }
 window.addBlock = (type) => {
   const wrap = document.createElement("div");
@@ -319,78 +440,107 @@ if (blocksHost && !blocksHost.children.length) {
   window.addBlock("text");
 }
 
-async function uploadAny(file, folder) {
-  if (!file) return "";
-  const r = sref(st, `${folder}/${Date.now()}-${file.name}`);
-  await uploadBytes(r, file);
-  return await getDownloadURL(r);
+// async function uploadAny(file, folder) {
+//   if (!file) return "";
+//   const r = sref(st, `${folder}/${Date.now()}-${file.name}`);
+//   await uploadBytes(r, file);
+//   return await getDownloadURL(r);
+// }
+async function uploadAny(file, folder = "uploads") {
+  alert("⚠️ Firebase Storage is disabled.\nPlease paste a Google Drive, YouTube, or GitHub URL instead.");
+  return ""; // skip upload
 }
 
+// ✅ URL-only createPost (no Firebase Storage uploads)
 window.createPost = async (ev) => {
   ev.preventDefault();
-  if (!auth.currentUser || !isAdmin) return alert("Admin only");
-  const title = (document.getElementById("pTitle")?.value || "").trim();
-  const allowHTML = document.getElementById("pAllowHTML")?.checked || false;
-  const postId = (document.getElementById("pId")?.value || "").trim();
-  const blocks = [];
-  const container = document.getElementById("blocks");
-  if (container) {
-    for (const el of container.children) {
-      const type = el.getAttribute("data-type");
-      if (type === "text") {
-        const txt = el.querySelector('[data-role="text"]')?.value || "";
-        blocks.push({ type: "text", text: txt, allowHTML });
-      } else {
-        const remove =
-          el.querySelector('[data-role="remove"]')?.checked || false;
-        if (remove) continue;
-        const file = el.querySelector('[data-role="file"]')?.files?.[0] || null;
-        let url = el.getAttribute("data-existing-url") || "";
-        if (file) {
-          url = await uploadAny(file, "posts");
+
+  try {
+    if (!auth?.currentUser || !isAdmin) {
+      alert("Admin only");
+      return;
+    }
+
+    const titleEl = document.getElementById("pTitle");
+    const idEl    = document.getElementById("pId");
+    const allowHTML = document.getElementById("pAllowHTML")?.checked || false;
+
+    const title  = (titleEl?.value || "").trim();
+    const postId = (idEl?.value || "").trim();
+
+    const container = document.getElementById("blocks");
+    const blocks = [];
+
+    if (container) {
+      for (const el of container.children) {
+        const type = el.getAttribute("data-type");
+        if (type === "text") {
+          const txt = el.querySelector('[data-role="text"]')?.value || "";
+          blocks.push({ type: "text", text: txt, allowHTML });
+        } else {
+          const remove = el.querySelector('[data-role="remove"]')?.checked || false;
+          if (remove) continue;
+
+          // ✅ URL-only: prefer URL input, else keep existing URL; no file uploads
+          const urlIn = (pickUrlFrom?.(el) || "").trim(); // helper you added
+          let url = urlIn || el.getAttribute("data-existing-url") || "";
+          url = normMediaURL?.(url) || url; // Drive/YouTube/GitHub → playable/embed
+
+          if (url) blocks.push({ type, url });
         }
-        if (url) blocks.push({ type, url });
       }
     }
+
+    // small guardrails
+    if (!title && blocks.length === 0) {
+      alert("Please add a title or some content.");
+      return;
+    }
+
+    if (postId) {
+      await updateDoc(doc(db, "posts", postId), {
+        title,
+        titleLower: (title || "").toLowerCase().trim(),
+        blocks,
+        updatedAt: serverTimestamp(),
+      });
+      alert("✅ Post updated successfully!");
+    } else {
+      const d = new Date();
+      await addDoc(collection(db, "posts"), {
+        title,
+        titleLower: (title || "").toLowerCase().trim(),
+        blocks,
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        likes: 0,
+        createdAt: serverTimestamp(),
+      });
+      alert("✅ Post published successfully!");
+    }
+
+    // reset form
+    if (container) {
+      container.innerHTML = "";
+      container.insertAdjacentHTML(
+        "beforeend",
+        `<div class="block" data-type="text">
+           <textarea placeholder="Text or HTML..." data-role="text"></textarea>
+         </div>`
+      );
+    }
+    if (titleEl) titleEl.value = "";
+    if (idEl) idEl.value = "";
+    const msg = document.getElementById("postMsg");
+    if (msg) msg.textContent = "";
+
+    // refresh list
+    loadPostsPage?.(0);
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to save the post. See console for details.");
   }
-  const d = new Date();
-  if (postId) {
-    await updateDoc(doc(db, "posts", postId), {
-      title,
-      titleLower: title.toLowerCase().trim(),
-      blocks,
-      updatedAt: serverTimestamp(),
-    });
-    alert("✅ Post updated successfully!");
-  } else {
-    await addDoc(collection(db, "posts"), {
-      title,
-      titleLower: title.toLowerCase().trim(),
-      blocks,
-      month: d.getMonth() + 1,
-      year: d.getFullYear(),
-      likes: 0,
-      createdAt: serverTimestamp(),
-    });
-    alert("✅ Post published successfully!");
-  }
-  // reset form
-  const host = document.getElementById("blocks");
-  if (host) {
-    host.innerHTML = "";
-    host.insertAdjacentHTML(
-      "beforeend",
-      `<div class="block" data-type="text"><textarea placeholder="Text or HTML..." data-role="text"></textarea></div>`
-    );
-  }
-  const titleEl = document.getElementById("pTitle");
-  if (titleEl) titleEl.value = "";
-  const idEl = document.getElementById("pId");
-  if (idEl) idEl.value = "";
-  const msg = document.getElementById("postMsg");
-  if (msg) msg.textContent = "";
-  // loadLatest();
-  loadPostsPage(0);
 };
 
 // --- Admin: Search / Manage Posts ---
@@ -578,28 +728,88 @@ function renderBlocks(arr) {
     gallery.length = 0;
   }
 
-  (arr || []).forEach(b => {
-    if (b.type === "image") { gallery.push(b.url); return; }
-    flushGallery();
+  (arr || []).forEach((b) => {
+      // === IMAGE: build gallery (Google Drive / GitHub raw)
+      if (b.type === "image") {
+        gallery.push(normMediaURL(b.url)); // Normalize all image URLs
+        return;
+      }
 
-    if (b.type === "text") {
-      const txt = b.allowHTML ? safeHTML(b.text || "") : escapeHTML(b.text || "");
-      out.push(`<div style="white-space:pre-wrap">${txt}</div>`);
-      return;
-    }
-    if (b.type === "video") {
-      out.push(`<div class="post-media"><video src="${b.url}" controls preload="metadata"
-              onclick="openMediaZoom('video','${b.url}')"></video></div>`);
-      return;
-    }
-    if (b.type === "audio") {
-      out.push(`<div class="post-media"><audio src="${b.url}" controls preload="metadata"
-              onclick="openMediaZoom('audio','${b.url}')"></audio></div>`);
-      return;
-    }
-  });
+      // flush gallery before other block types
+      flushGallery();
 
-  flushGallery();
+      // === TEXT: support [img]/[video]/[audio] shortcodes
+      if (b.type === "text") {
+        const raw = b.text || "";
+        if (b.allowHTML) {
+          const html = parseMediaShortcodes(raw); // shortcode -> <img> etc
+          out.push(
+            `<div class="body" style="white-space:pre-wrap">${safeHTML(html)}</div>`
+          );
+        } else {
+          out.push(
+            `<div class="body" style="white-space:pre-wrap">${escapeHTML(raw)}</div>`
+          );
+        }
+        return;
+      }
+
+      // === VIDEO: handle YouTube embed, Drive preview, or direct MP4
+      if (b.type === "video") {
+        const src = normMediaURL(b.url);
+        if (src.includes("youtube.com/embed/")) {
+          out.push(`
+            <div class="post-media m-yt">
+              <iframe
+                src="${src}"
+                loading="lazy"
+                allowfullscreen
+                frameborder="0"
+                referrerpolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>`);
+        } else if (src.includes("drive.google.com")) {
+          out.push(`
+            <div class="post-media m-drive">
+              <iframe
+                src="${src}"
+                loading="lazy"
+                allowfullscreen
+                frameborder="0"
+              ></iframe>
+            </div>`);
+        } else {
+          out.push(`
+            <div class="post-media">
+              <video
+                src="${src}"
+                controls
+                preload="metadata"
+                onclick="openMediaZoom('video','${src}')"
+              ></video>
+            </div>`);
+        }
+        return;
+      }
+
+      // === AUDIO (Google Drive, GitHub raw, or MP3 link)
+      if (b.type === "audio") {
+        const src = normMediaURL(b.url);
+        out.push(`
+          <div class="post-media">
+            <audio
+              src="${src}"
+              controls
+              preload="metadata"
+              onclick="openMediaZoom('audio','${src}')"
+            ></audio>
+          </div>`);
+        return;
+      }
+    });
+
+  // final flush in case last blocks were images
+  flushGallery(true);
   return out.join("");
 }
 
@@ -1408,27 +1618,31 @@ window.editPost = async function (id) {
         el.querySelector('[data-role="text"]').value = b.text || "";
         host.appendChild(el);
       } else {
+        const src = normMediaURL(b.url || "");   // ✅ normalize for preview + existing
         const preview =
           b.type === "image"
-            ? `<img src="${b.url}" class="prev">`
+            ? `<img src="${src}" class="prev" alt="preview">`
             : b.type === "video"
-            ? `<video src="${b.url}" class="prev" controls></video>`
-            : `<audio src="${b.url}" class="prev" controls></audio>`;
+            ? `<video src="${src}" class="prev" controls></video>`
+            : `<audio src="${src}" class="prev" controls></audio>`;
+
         const accept =
-          b.type === "image"
-            ? "image/*"
-            : b.type === "video"
-            ? "video/*"
-            : "audio/*";
+          b.type === "image" ? "image/*" :
+          b.type === "video" ? "video/*" : "audio/*";
+
         const wrap = document.createElement("div");
-        wrap.innerHTML = `<div class="block" data-type="${
-          b.type
-        }" data-existing-url="${b.url}">
+        wrap.innerHTML = `<div class="block" data-type="${b.type}"
+                              data-existing-url="${src}">
             <div class="post-media">${preview}</div>
             <div class="media-input">
               <label class="file small">
                 <span>Replace ${b.type.toUpperCase()}</span>
                 <input type="file" accept="${accept}" data-role="file"/>
+              </label>
+              <label class="url small">
+                <span>or paste ${b.type} URL</span>
+                <!-- ✅ prefill URL box -->
+                <input type="url" placeholder="https://…" data-role="url" value="${b.url || ""}"/>
               </label>
               <label class="switch">
                 <input type="checkbox" data-role="remove">
