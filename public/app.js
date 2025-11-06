@@ -75,31 +75,44 @@ function toYouTubeEmbed(u='') {
 }
 
 // 3) Normalizer (any URL → best playable form)
-function normMediaURL(url = "") {
-  if (!url) return "";
+function getYouTubeId(u=''){
+  try{
+    const url = new URL(u);
+    // youtu.be/<id>?si=...
+    if (url.hostname === 'youtu.be') return url.pathname.slice(1);
+    // youtube.com/watch?v=<id>
+    if (url.hostname.includes('youtube.com')) {
+      const v = url.searchParams.get('v');
+      if (v) return v;
+      // /shorts/<id> or /embed/<id> etc.
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts[0] === 'shorts' && parts[1]) return parts[1];
+      if (parts[0] === 'embed'  && parts[1]) return parts[1];
+    }
+  }catch(e){}
+  return null;
+}
 
-  // Google Drive direct link
-  if (url.includes("drive.google.com")) {
-    const id = (url.match(/\/d\/([^/]+)/) || [])[1];
+function normMediaURL(u=''){
+  if (!u) return '';
+  // --- YouTube ---
+  const yid = getYouTubeId(u);
+  if (yid) return `https://www.youtube.com/embed/${yid}`;
+
+  // --- Google Drive (any style) ---
+  try{
+    const m1 = u.match(/\/file\/d\/([^/]+)\//);
+    const m2 = u.match(/[?&]id=([^&]+)/);
+    const id = m1?.[1] || m2?.[1];
     if (id) return `https://drive.google.com/uc?export=view&id=${id}`;
+  }catch(e){}
+
+  // --- GitHub blob → raw ---
+  if (u.includes('github.com') && u.includes('/blob/')) {
+    return u.replace('/blob/','/raw/');
   }
 
-  // YouTube short / long links → embed
-  if (url.includes("youtu.be/")) {
-    const id = url.split("youtu.be/")[1].split("?")[0];
-    return `https://www.youtube.com/embed/${id}`;
-  }
-  if (url.includes("youtube.com/watch?v=")) {
-    const id = new URL(url).searchParams.get("v");
-    return `https://www.youtube.com/embed/${id}`;
-  }
-
-  // GitHub blob → raw
-  if (url.includes("github.com") && url.includes("/blob/")) {
-    return url.replace("/blob/", "/raw/");
-  }
-
-  return url;
+  return u;
 }
 
 // 4) Tiny “BB-code” style parser for body text
@@ -451,9 +464,25 @@ async function uploadAny(file, folder = "uploads") {
   return ""; // skip upload
 }
 
-// ✅ URL-only createPost (no Firebase Storage uploads)
+// ✅ URL-only createPost (auto-detect YouTube → video/embed)
 window.createPost = async (ev) => {
   ev.preventDefault();
+
+  // small helper to extract YouTube ID (works with youtu.be, watch?v=, shorts, embed)
+  const getYouTubeIdLocal = (u='') => {
+    try {
+      const url = new URL(u);
+      if (url.hostname === 'youtu.be') return url.pathname.slice(1);
+      if (url.hostname.includes('youtube.com')) {
+        const v = url.searchParams.get('v');
+        if (v) return v;
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts[0] === 'shorts' && parts[1]) return parts[1];
+        if (parts[0] === 'embed'  && parts[1]) return parts[1];
+      }
+    } catch(e) {}
+    return null;
+  };
 
   try {
     if (!auth?.currentUser || !isAdmin) {
@@ -461,8 +490,8 @@ window.createPost = async (ev) => {
       return;
     }
 
-    const titleEl = document.getElementById("pTitle");
-    const idEl    = document.getElementById("pId");
+    const titleEl   = document.getElementById("pTitle");
+    const idEl      = document.getElementById("pId");
     const allowHTML = document.getElementById("pAllowHTML")?.checked || false;
 
     const title  = (titleEl?.value || "").trim();
@@ -473,25 +502,37 @@ window.createPost = async (ev) => {
 
     if (container) {
       for (const el of container.children) {
-        const type = el.getAttribute("data-type");
-        if (type === "text") {
+        const type0 = el.getAttribute("data-type");
+
+        if (type0 === "text") {
           const txt = el.querySelector('[data-role="text"]')?.value || "";
           blocks.push({ type: "text", text: txt, allowHTML });
-        } else {
-          const remove = el.querySelector('[data-role="remove"]')?.checked || false;
-          if (remove) continue;
-
-          // ✅ URL-only: prefer URL input, else keep existing URL; no file uploads
-          const urlIn = (pickUrlFrom?.(el) || "").trim(); // helper you added
-          let url = urlIn || el.getAttribute("data-existing-url") || "";
-          url = normMediaURL?.(url) || url; // Drive/YouTube/GitHub → playable/embed
-
-          if (url) blocks.push({ type, url });
+          continue;
         }
+
+        // media blocks (image / video / audio) — URL only
+        const remove = el.querySelector('[data-role="remove"]')?.checked || false;
+        if (remove) continue;
+
+        // prefer URL input; fallback to existing URL; (NO file upload)
+        const urlIn = (pickUrlFrom?.(el) || "").trim();
+        let url = urlIn || el.getAttribute("data-existing-url") || "";
+        url = (normMediaURL?.(url) || url).trim();
+
+        if (!url) continue;
+
+        // auto-detect YouTube; force video type + embed URL
+        const yid = (typeof getYouTubeId === 'function' ? getYouTubeId(url) : null) || getYouTubeIdLocal(url);
+        let type = type0;
+        if (yid) {
+          type = "video";
+          url = `https://www.youtube.com/embed/${yid}`;
+        }
+
+        blocks.push({ type, url });
       }
     }
 
-    // small guardrails
     if (!title && blocks.length === 0) {
       alert("Please add a title or some content.");
       return;
@@ -534,7 +575,6 @@ window.createPost = async (ev) => {
     const msg = document.getElementById("postMsg");
     if (msg) msg.textContent = "";
 
-    // refresh list
     loadPostsPage?.(0);
 
   } catch (err) {
