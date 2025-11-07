@@ -145,10 +145,25 @@ function parseMediaShortcodes(text=''){
   return out;
 }
 
+function toAbsoluteURL(u='') {
+  if (!u) return '';
+  // already absolute
+  if (/^https?:\/\//i.test(u)) return u;
+  // protocol-relative //cdn...
+  if (/^\/\//.test(u)) return location.protocol + u;
+  // site-root path /img/...
+  if (u.startsWith('/')) return location.origin + u;
+  // ./img or img relative to current app root
+  const base = location.origin + location.pathname.replace(/\/[^/]*$/, '/');
+  return new URL(u, base).toString();
+}
+
 // 5) Collect a media URL from any editor block (ignores <input type="file">)
 function pickUrlFrom(container){
-  const url = container?.querySelector?.('[data-role="url"]')?.value?.trim() || '';
-  return url ? normMediaURL(url) : '';
+  const raw = container?.querySelector?.('[data-role="url"]')?.value?.trim() || '';
+  if (!raw) return '';
+  const abs = toAbsoluteURL(raw);
+  return normMediaURL(abs); // Drive/YouTube/GitHub normalize (ရှိပြီးသား)
 }
 
 // Tabs
@@ -406,40 +421,23 @@ let haveNext = true;     // next ရှိ/မရှိ ပြသဖို့
 // Posts
 const blocksHost = document.getElementById("blocks");
 function blockTpl(type) {
-  // 🔹 TEXT BLOCK
   if (type === "text") {
     return `<div class="block" data-type="text">
       <textarea placeholder="Text or HTML..." data-role="text"></textarea>
     </div>`;
   }
-
-  // 🔹 MEDIA BLOCK (image / video / audio)
-  const accept =
-    type === "image"
-      ? "image/*"
-      : type === "video"
-      ? "video/*"
-      : "audio/*";
-
-  return `
-    <div class="block" data-type="${type}">
+  const accept = type === "image" ? "image/*" : type === "video" ? "video/*" : "audio/*";
+  return `<div class="block" data-type="${type}">
       <div class="media-input">
-        <label class="file small" style="opacity:0.6; pointer-events:none;">
+        <label class="file small" style="opacity:.5;pointer-events:none">
           <span>Upload ${type.toUpperCase()} (disabled)</span>
-          <input type="file" accept="${accept}" data-role="file" disabled />
+          <input type="file" accept="${accept}" data-role="file" disabled/>
         </label>
-
         <label class="url small">
           <span>or paste ${type} URL</span>
-          <input type="url" placeholder="https:// (Google Drive, YouTube, GitHub raw)" data-role="url"/>
+          <!-- 🔁 type=url ➜ text (relative paths allowed) -->
+          <input type="text" placeholder="/img/cat.png or https://…" data-role="url"/>
         </label>
-
-        <div class="hint muted" style="font-size:12px;margin-top:6px;">
-          💡 Example:<br>
-          - Google Drive → https://drive.google.com/file/d/FILE_ID/view<br>
-          - YouTube → https://youtu.be/VIDEO_ID<br>
-          - GitHub → https://github.com/user/repo/blob/main/image.png
-        </div>
       </div>
     </div>`;
 }
